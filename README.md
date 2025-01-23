@@ -1,2 +1,3 @@
-# SpaTM
-A Spatial Topic Model analyzing Spatial Transcriptomes
+# A Spatial Topic Model (SpaTM) for analyzing Spatial Transcriptomes
+
+
