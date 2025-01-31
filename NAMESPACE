@@ -1,0 +1,5 @@
+useDynLib(SpaTM, .registration=TRUE)
+importFrom(Rcpp,evalCpp)
+importFrom(SingleCellExperiment,SingleCellExperiment)
+importFrom(SpatialExperiment,SpatialExperiment)
+exportPattern("^[[:alpha:]]+")
