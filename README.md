@@ -16,3 +16,6 @@ devtools::install_github("li-lab-mcgill/SpaTM")
 ## Issues
 Please use the [issues](https://github.com/li-lab-mcgill/SpaTM/issues) tab to contact us if you encounter any issues/bugs or have suggestions for our software!
 
+
+## SpaTM Workflow
+![SpaTM Workflow](https://github.com/aosakwe/SpaTM_Analysis/blob/main/SpaTM.png)
