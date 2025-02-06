@@ -264,9 +264,9 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// train_stm_scgtm
-arma::mat train_stm_scgtm(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, arma::vec& labels, const arma::mat& alpha, const arma::mat& beta, int K, int D, arma::mat& n_dk, arma::mat& n_wk, int num_threads, int maxiter, bool verbal, bool zero_gamma, bool rand_gamma, double thresh, double lr);
-RcppExport SEXP _SpaTM_train_stm_scgtm(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP labelsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP threshSEXP, SEXP lrSEXP) {
+// train_stm
+arma::mat train_stm(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, arma::vec& labels, const arma::mat& alpha, const arma::mat& beta, int K, int D, arma::mat& n_dk, arma::mat& n_wk, int num_threads, int maxiter, bool verbal, bool zero_gamma, bool rand_gamma, double thresh, double lr);
+RcppExport SEXP _SpaTM_train_stm(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP labelsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP threshSEXP, SEXP lrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -287,7 +287,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type rand_gamma(rand_gammaSEXP);
     Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
     Rcpp::traits::input_parameter< double >::type lr(lrSEXP);
-    rcpp_result_gen = Rcpp::wrap(train_stm_scgtm(counts, celltypes, genes, labels, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, lr));
+    rcpp_result_gen = Rcpp::wrap(train_stm(counts, celltypes, genes, labels, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, lr));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -384,7 +384,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SpaTM_mlp_nbr_pred", (DL_FUNC) &_SpaTM_mlp_nbr_pred, 3},
     {"_SpaTM_test_stm_cell", (DL_FUNC) &_SpaTM_test_stm_cell, 0},
     {"_SpaTM_test_stm_cellmap", (DL_FUNC) &_SpaTM_test_stm_cellmap, 11},
-    {"_SpaTM_train_stm_scgtm", (DL_FUNC) &_SpaTM_train_stm_scgtm, 17},
+    {"_SpaTM_train_stm", (DL_FUNC) &_SpaTM_train_stm, 17},
     {"_SpaTM_progress_bar", (DL_FUNC) &_SpaTM_progress_bar, 5},
     {"_SpaTM_mlp_forward", (DL_FUNC) &_SpaTM_mlp_forward, 4},
     {"_SpaTM_get_label_prob", (DL_FUNC) &_SpaTM_get_label_prob, 8},

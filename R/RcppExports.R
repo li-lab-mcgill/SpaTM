@@ -65,8 +65,8 @@ test_stm_cellmap <- function(counts, celltypes, genes, alpha, beta, D, K, zero_g
     invisible(.Call(`_SpaTM_test_stm_cellmap`, counts, celltypes, genes, alpha, beta, D, K, zero_gamma, rand_gamma, labels, print_cell))
 }
 
-train_stm_scgtm <- function(counts, celltypes, genes, labels, alpha, beta, K, D, n_dk, n_wk, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0.00001, lr = 0.0001) {
-    .Call(`_SpaTM_train_stm_scgtm`, counts, celltypes, genes, labels, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, lr)
+train_stm <- function(counts, celltypes, genes, labels, alpha, beta, K, D, n_dk, n_wk, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0.00001, lr = 0.0001) {
+    .Call(`_SpaTM_train_stm`, counts, celltypes, genes, labels, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, lr)
 }
 
 progress_bar <- function(iter, maxiter, elbo, train_acc, val_acc) {

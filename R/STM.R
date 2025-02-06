@@ -333,3 +333,76 @@ STM_Torch_burnin <- function(spe, num_threads = 1L,
                                 i-1)
   }
 }
+
+
+
+## Full STM Wrapper
+## TODO add class imbalance to GLM
+## TODO Use MLP wrapper within this function for ease of use
+## TODO Resolve Torch openMP bug!
+STM <- function(spe, num_threads = 1L,
+                      maxiter = 100L, verbal = TRUE,
+                      zero_gamma = TRUE,
+                      rand_gamma = FALSE, thresh = 0.00001,
+                      lr = 0.0001,
+                      mlp = NULL,
+                      mlp_layers = NULL,
+                      mlp_epoch = NULL,
+                      spe_val = NULL,
+                      device = NULL,
+                      balanced_class = TRUE,
+                      dummy_topic = FALSE,
+                      burnin = 5){
+  if (is.null(mlp)){
+    message('Running GLM-STM')
+    metadata(spe)[['STM_Weights']] <- train_stm(counts(spe),
+                                                spe$int_cell,
+                                                rowData(spe)$gene_ints,
+                                                spe$layer,
+                                                alphaPrior(spe),
+                                                betaPrior(spe),
+                                                K,
+                                                ncol(spe),
+                                                ndk(spe),
+                                                nwk(spe),
+                                                num_threads,
+                                                maxiter,
+                                                verbal,
+                                                zero_gamma,
+                                                rand_gamma,
+                                                thresh,
+                                                lr)
+    return(spe)
+  }
+  else{
+    message('Running Torch-STM')
+    if (is.null(spe_val)){
+      stop('Need to have a validation set to ensure there is no overfitting')
+    }
+    STM_Torch_burnin(spe_train,
+                     num_threads,
+                     burnin,
+                     verbal,
+                     zero_gamma,
+                     rand_gamma,
+                     thresh,
+                     lr,
+                     mlp,
+                     mlp_layers,
+                     mlp_epoch = 0,
+                     spe_val)
+
+    metadata(spe)[['STM_MLP']] <- STM_Torch(spe_train,
+                                            num_threads,
+                                            max_iter,
+                                            zero_gamma,
+                                            rand_gamma,
+                                            thresh,
+                                            lr,
+                                            mlp,
+                                            mlp_layers,
+                                            mlp_epoch,
+                                            spe_val)
+  }
+
+}
