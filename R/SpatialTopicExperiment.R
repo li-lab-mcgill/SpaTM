@@ -3,7 +3,7 @@
 
 #### Extending spe object
 #' @rdname SpatialTopicExperiment
-#' @exportClass SpatialTopicExperiment scGTM
+#' @exportClass SpatialTopicExperiment SpaTM
 #' @importFrom SpatialExperiment SpatialExperiment
 setClass(
   "SpatialTopicExperiment",
@@ -23,6 +23,10 @@ SpatialTopicExperiment <- function(spe,guided = FALSE,
                                       K = NULL,
                                       hvg = NULL,
                                       verbal = FALSE){
+  if (!guided & is.null(K)){
+    cat('No guided or topic number provided. Setting topics to K = 10. \nIf this is an error please re-run the function and assign a number of topics or a guide variable.\n')
+    K <- 10
+  }
   if (is.numeric(hvg)){
    if(verbal){ cat(paste("Filtering Top ",hvg," Highly variable genes\n",sep = ''))}
     ## Calculate HVG and filter
@@ -51,19 +55,24 @@ SpatialTopicExperiment <- function(spe,guided = FALSE,
     alphaPrior(spte) <- build_alpha(spte,labels,K)
   }
   betaPrior(spte) <- build_beta(spte,K)
-  
+
  if(verbal){ cat("Initialized Prior Matrices\n")}
-  
+
   ndk(spte) <- matrix(0,ncol(spte),K)
   nwk(spte) <- matrix(0,nrow(spte),K)
-  
+  theta(spte) <- matrix(0,ncol(spte),K)
+  phi(spte) <- matrix(0,nrow(spte),K)
   if(verbal){cat("Initialized Sufficient Statistics\n")}
-  rownames(ndk(spte)) <- rownames(alphaPrior(spte)) <- colnames(spte)
-  rownames(nwk(spte)) <- rownames(betaPrior(spte)) <- rownames(spte)
+
+  ## Assuming the labels are "Celltype"
+  rownames(theta(spte)) <- rownames(ndk(spte)) <- rownames(alphaPrior(spte)) <- colnames(spte)
+  rownames(phi(spte)) <- rownames(nwk(spte)) <- rownames(betaPrior(spte)) <- rownames(spte)
+
   colnames(ndk(spte)) <- colnames(nwk(spte)) <- colnames(betaPrior(spte)) <-
     colnames(alphaPrior(spte))
+  colnames(theta(spte)) <- colnames(phi(spte)) <- colnames(alphaPrior(spte))
   ## Assuming the labels are "Celltype"
-  
+
   spte$int_cell <- 1:ncol(spte)
   rowData(spte)$gene_ints <- 1:nrow(spte)
   return(spte)

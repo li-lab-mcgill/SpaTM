@@ -5,7 +5,7 @@
 
 #### Extending SCE object
 #' @rdname SingleCellTopicExperiment
-#' @exportClass SingleCellTopicExperiment scGTM
+#' @exportClass SingleCellTopicExperiment SpaTM
 #' @importFrom SingleCellExperiment SingleCellExperiment
 setClass(
   "SingleCellTopicExperiment",
@@ -25,6 +25,10 @@ SingleCellTopicExperiment <- function(sce,guided = FALSE,
                                       K = NULL,
                                       hvg = NULL,
                                       verbal = FALSE){
+  if (!guided & is.null(K)){
+    cat('No guided or topic number provided. Setting topics to K = 10. \nIf this is an error please re-run the function and assign a number of topics or a guide variable.\n')
+    K <- 10
+  }
   if (is.numeric(hvg)){
     if(verbal){cat(paste("Filtering Top ",hvg," Highly variable genes\n",sep = ''))}
     ## Calculate HVG and filter
@@ -53,27 +57,24 @@ SingleCellTopicExperiment <- function(sce,guided = FALSE,
     alphaPrior(scte) <- build_alpha(scte,labels,K)
   }
   betaPrior(scte) <- build_beta(scte,K)
-  
+
   if(verbal){cat("Initialized Prior Matrices\n")}
-  
+
   ndk(scte) <- matrix(0,ncol(scte),K)
   nwk(scte) <- matrix(0,nrow(scte),K)
-  
+  theta(scte) <- matrix(0,ncol(scte),K)
+  phi(scte) <- matrix(0,nrow(scte),K)
   if(verbal){cat("Initialized Sufficient Statistics\n")}
-  
+
   ## Assuming the labels are "Celltype"
-  rownames(ndk(scte)) <- rownames(alphaPrior(scte)) <- colnames(scte)
-  rownames(nwk(scte)) <- rownames(betaPrior(scte)) <- rownames(scte)
+  rownames(theta(scte)) <- rownames(ndk(scte)) <- rownames(alphaPrior(scte)) <- colnames(scte)
+  rownames(phi(scte)) <- rownames(nwk(scte)) <- rownames(betaPrior(scte)) <- rownames(scte)
+
   colnames(ndk(scte)) <- colnames(nwk(scte)) <- colnames(betaPrior(scte)) <-
     colnames(alphaPrior(scte))
+  colnames(theta(scte)) <- colnames(phi(scte)) <- colnames(alphaPrior(scte))
+
   scte$int_cell <- 1:ncol(scte)
   rowData(scte)$gene_ints <- 1:nrow(scte)
   return(scte)
 }
-
-
-#### Print function ####
-
-
-
-#Print Contents

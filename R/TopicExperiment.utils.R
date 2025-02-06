@@ -1,73 +1,44 @@
 ##Topic Experiment Utils
 
+## Class Union to simplify utility functions
+setClassUnion('TopicExperiment',c('SingleCellTopicExperiment','SpatialTopicExperiment'))
 
-# Getters ####
+
+#### Getters & Setters ####
 
 #### Alpha Prior ####
 setGeneric("alphaPrior", function(te) standardGeneric("alphaPrior"))
 setGeneric("alphaPrior<-", function(te, values) standardGeneric("alphaPrior<-"))
 setMethod(
   f = "alphaPrior",
-  signature = c("SingleCellTopicExperiment"),
+  signature = c("TopicExperiment"),
   function(te) {
     return(te@alphaPrior)
   }
 )
 setReplaceMethod(
   f = "alphaPrior",
-  signature = c("SingleCellTopicExperiment"),
+  signature = c("TopicExperiment"),
   function(te,values){
     te@alphaPrior <- values
     return(te)
   }
 )
 
-## Spatial
-setMethod(
-  f = "alphaPrior",
-  signature = c("SpatialTopicExperiment"),
-  function(te) {
-    return(te@alphaPrior)
-  }
-)
-setReplaceMethod(
-  f = "alphaPrior",
-  signature = c("SpatialTopicExperiment"),
-  function(te,values){
-    te@alphaPrior <- values
-    return(te)
-  }
-)
+
 #### Beta Prior ####
 setGeneric("betaPrior", function(te) standardGeneric("betaPrior"))
 setGeneric("betaPrior<-", function(te, values) standardGeneric("betaPrior<-"))
 setMethod(
   f = "betaPrior",
-  signature = "SingleCellTopicExperiment",
+  signature = "TopicExperiment",
   function(te) {
     return(te@betaPrior)
   }
 )
 setReplaceMethod(
   f = "betaPrior",
-  signature = "SingleCellTopicExperiment",
-  function(te,values){
-    te@betaPrior <- values
-    return(te)
-  }
-)
-
-## Spatial
-setMethod(
-  f = "betaPrior",
-  signature = "SpatialTopicExperiment",
-  function(te) {
-    return(te@betaPrior)
-  }
-)
-setReplaceMethod(
-  f = "betaPrior",
-  signature = "SpatialTopicExperiment",
+  signature = "TopicExperiment",
   function(te,values){
     te@betaPrior <- values
     return(te)
@@ -80,7 +51,7 @@ setGeneric("ndk", function(te) standardGeneric("ndk"))
 setGeneric("ndk<-", function(te, values) standardGeneric("ndk<-"))
 setMethod(
   f = "ndk",
-  signature = "SingleCellTopicExperiment",
+  signature = "TopicExperiment",
   function(te) {
     return(te@ndk)
   }
@@ -88,59 +59,26 @@ setMethod(
 
 setReplaceMethod(
   f = "ndk",
-  signature = "SingleCellTopicExperiment",
+  signature = "TopicExperiment",
   function(te,values){
     te@ndk <- values
     return(te)
   }
 )
 
-##Spatial
-setMethod(
-  f = "ndk",
-  signature = "SpatialTopicExperiment",
-  function(te) {
-    return(te@ndk)
-  }
-)
-
-setReplaceMethod(
-  f = "ndk",
-  signature = "SpatialTopicExperiment",
-  function(te,values){
-    te@ndk <- values
-    return(te)
-  }
-)
 ## Gene by Topics (nwk) ####
 setGeneric("nwk", function(te) standardGeneric("nwk"))
 setGeneric("nwk<-", function(te, values) standardGeneric("nwk<-"))
 setMethod(
   f = "nwk",
-  signature = "SingleCellTopicExperiment",
+  signature = "TopicExperiment",
   function(te) {
     return(te@nwk)
   }
 )
 setReplaceMethod(
   f = "nwk",
-  signature = "SingleCellTopicExperiment",
-  function(te,values){
-    te@nwk <- values
-    return(te)
-  }
-)
-## Spatial
-setMethod(
-  f = "nwk",
-  signature = "SpatialTopicExperiment",
-  function(te) {
-    return(te@nwk)
-  }
-)
-setReplaceMethod(
-  f = "nwk",
-  signature = "SpatialTopicExperiment",
+  signature = "TopicExperiment",
   function(te,values){
     te@nwk <- values
     return(te)
@@ -152,64 +90,33 @@ setGeneric("theta", function(te) standardGeneric("theta"))
 setGeneric("theta<-", function(te, values) standardGeneric("theta<-"))
 setMethod(
   f = "theta",
-  signature = "SingleCellTopicExperiment",
+  signature = "TopicExperiment",
   function(te) {
     return(te@theta)
   }
 )
 setReplaceMethod(
   f = "theta",
-  signature = "SingleCellTopicExperiment",
+  signature = "TopicExperiment",
   function(te,values){
     te@theta <- values
     return(te)
   }
 )
-##Spatial
-setMethod(
-  f = "theta",
-  signature = "SpatialTopicExperiment",
-  function(te) {
-    return(te@theta)
-  }
-)
-setReplaceMethod(
-  f = "theta",
-  signature = "SpatialTopicExperiment",
-  function(te,values){
-    te@theta <- values
-    return(te)
-  }
-)
+
 ##Phi ####
 setGeneric("phi", function(te) standardGeneric("phi"))
 setGeneric("phi<-", function(te, values) standardGeneric("phi<-"))
 setMethod(
   f = "phi",
-  signature = "SingleCellTopicExperiment",
+  signature = "TopicExperiment",
   function(te) {
     return(te@phi)
   }
 )
 setReplaceMethod(
   f = "phi",
-  signature = "SingleCellTopicExperiment",
-  function(te,values){
-    te@phi <- values
-    return(te)
-  }
-)
-##Spatial
-setMethod(
-  f = "phi",
-  signature = "SpatialTopicExperiment",
-  function(te) {
-    return(te@phi)
-  }
-)
-setReplaceMethod(
-  f = "phi",
-  signature = "SpatialTopicExperiment",
+  signature = "TopicExperiment",
   function(te,values){
     te@phi <- values
     return(te)
@@ -225,9 +132,9 @@ build_alpha <- function(te,labels = NULL,K = 10){
     return(a)
   } else{
     D <- ncol(te)
-    K <- length(unique(colData(te)[,labels])) 
-    
-    
+    K <- length(unique(colData(te)[,labels]))
+
+
     ## Dirichlet parameters
     covariates  <- unique(colData(te)[,labels])
     cell_id <- match(colData(te)[,labels],covariates)
@@ -240,12 +147,12 @@ build_alpha <- function(te,labels = NULL,K = 10){
     rownames(a) <- colnames(te)
     colnames(a) <- covariates
     a <- as.matrix(a)
-    
+
     return(a)
-    
+
   }
-  
-  
+
+
 }
 build_beta <- function(te,K){
   return(matrix(0.001, nrow = nrow(te),ncol = K))
@@ -285,3 +192,150 @@ buildPhi <- function(te){
   rownames(phi(te)) <- rownames(te)
   return(te)
 }
+
+
+##Update Show Methods
+#### Print Class ####
+setMethod("show",
+          signature = "SingleCellTopicExperiment", function(object) {
+            callNextMethod()  # Calls ParentClass's show() first
+            cat("TopicPriors: ",
+                paste('Alpha ',
+                      ifelse(all(object@alphaPrior == 0),'(Empty)',''),
+                      ' Beta' ,
+                      ifelse(all(object@betaPrior == 0),'(Empty)',''),
+                      sep = ''),'\n')
+            cat("SuffStats:",
+                paste('NDK ',
+                      ifelse(all(object@ndk == 0),'(Empty)',''),
+                      ' NWK ',
+                      ifelse(all(object@ndk == 0),'(Empty)',''),
+                      sep = ''),'\n')
+            cat("ExpTopics:",
+                paste('Theta ',
+                      ifelse(all(object@theta == 0),'(Empty)',''),
+                      ' Phi ',
+                      ifelse(all(object@phi == 0),'(Empty)',''),
+                      sep = ''),'\n')  # Adds additional details
+          })
+
+
+#### Print Class ####
+setMethod("show",
+          signature = "SpatialTopicExperiment", function(object) {
+            callNextMethod()  # Calls ParentClass's show() first
+            cat("TopicPriors: ",
+                paste('Alpha ',
+                      ifelse(all(object@alphaPrior == 0),'(Empty)',''),
+                      ' Beta' ,
+                      ifelse(all(object@betaPrior == 0),'(Empty)',''),
+                      sep = ''),'\n')
+            cat("SuffStats:",
+                paste('NDK ',
+                      ifelse(all(object@ndk == 0),'(Empty)',''),
+                      ' NWK ',
+                      ifelse(all(object@ndk == 0),'(Empty)',''),
+                      sep = ''),'\n')
+            cat("ExpTopics:",
+                paste('Theta ',
+                      ifelse(all(object@theta == 0),'(Empty)',''),
+                      ' Phi ',
+                      ifelse(all(object@phi == 0),'(Empty)',''),
+                      sep = ''),'\n')  # Adds additional details
+          })
+
+
+###Subset Topic Matrices ####
+setMethod("[", c("SingleCellTopicExperiment", "ANY", "ANY"),
+          function(x, i, j, ..., drop=FALSE) {
+
+            if (missing(i)) i <- TRUE
+            if (missing(j)) j <- TRUE
+            x <- callNextMethod()
+
+            ## Update Gene-Topic Components
+            ii <- SingleCellExperiment:::.convert_subset_index(i, rownames(x))
+            betaPrior(x) <- betaPrior(x)[ii,,drop=FALSE]
+            nwk(x) <- nwk(x)[ii,,drop=FALSE]
+            phi(x) <- phi(x)[ii,,drop=FALSE]
+
+            ## Update Sample-Topic Components
+            jj <- SingleCellExperiment:::.convert_subset_index(j, colnames(x))
+            alphaPrior(x) <- alphaPrior(x)[jj,,drop=FALSE]
+            ndk(x) <- ndk(x)[jj,,drop=FALSE]
+            theta(x) <- theta(x)[jj,,drop=FALSE]
+
+            return(x)
+          })
+
+
+setMethod("[", c("SpatialTopicExperiment", "ANY", "ANY"),
+          function(x, i, j, ..., drop=FALSE) {
+                if (missing(i)) i <- TRUE
+                if (missing(j)) j <- TRUE
+                x <- callNextMethod()
+
+                ## Update Gene-Topic Components
+                ii <- SingleCellExperiment:::.convert_subset_index(i, rownames(x))
+                betaPrior(x) <- betaPrior(x)[ii,,drop=FALSE]
+                nwk(x) <- nwk(x)[ii,,drop=FALSE]
+                phi(x) <- phi(x)[ii,,drop=FALSE]
+
+                ## Update Sample-Topic Components
+                jj <- SingleCellExperiment:::.convert_subset_index(j, colnames(x))
+                alphaPrior(x) <- alphaPrior(x)[jj,,drop=FALSE]
+                ndk(x) <- ndk(x)[jj,,drop=FALSE]
+                theta(x) <- theta(x)[jj,,drop=FALSE]
+
+                return(x)
+})
+
+
+
+
+setReplaceMethod(
+  f = "rownames",
+  signature = c("TopicExperiment","character"),
+  function(te,values){
+    te@phi <- values
+    return(te)
+  }
+)
+
+## Update dimnames
+setReplaceMethod("dimnames", c("SingleCellTopicExperiment", "list"),
+                 function(x, value)
+                 {
+                   x <- callNextMethod()
+                   #Update gene names
+                   rownames(x@betaPrior) <- value[[1L]]
+                   rownames(x@nwk) <- value[[1L]]
+                   rownames(x@phi) <- value[[1L]]
+                   #update sample names
+                   rownames(x@alphaPrior) <- value[[2L]]
+                   rownames(x@ndk) <- value[[2L]]
+                   rownames(x@theta) <- value[[2L]]
+                   return(x)})
+
+
+
+setReplaceMethod("dimnames", c("SpatialExperiment", "list"),
+                 function(x, value)
+                 {
+                   # Call the default dimnames replacement from SummarizedExperiment
+                   x <- callNextMethod()
+
+                   #Update gene names
+                   rownames(x@betaPrior) <- value[[1L]]
+                   rownames(x@nwk) <- value[[1L]]
+                   rownames(x@phi) <- value[[1L]]
+                   #update sample names
+                   rownames(x@alphaPrior) <- value[[2L]]
+                   rownames(x@ndk) <- value[[2L]]
+                   rownames(x@theta) <- value[[2L]]
+                   if (!is.null(spatialCoords(x))) {
+                     rownames(spatialCoords(x)) <- value[[2L]]  # Sync colnames with spatialCoords
+                   }
+                   return(x)})
+                 })
+
