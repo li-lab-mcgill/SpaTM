@@ -1,16 +1,56 @@
 library(scran)
-library(scater) 
-library(tidyverse)   
-library(Matrix) 
+library(scater)
+library(tidyverse)
+library(Matrix)
 library(spatialLIBD)
 library(DescTools)
 library(cluster)
 
 
+
+#### Training ####
+RTM <- function(scte,
+                K,
+                nbr_list,
+                loss_fun = 1,
+                num_threads = 1,
+                maxiter = 100,
+                verbal = TRUE,
+                zero_gamma = FALSE,
+                rand_gamma = TRUE){
+  metadata(scte)[['RTM_weights']] <- train_RTM(counts(scte),
+                                               scte$int_cell,
+                                               rowData(scte)$gene_ints,
+                                               nbr_list,
+                                               alphaPrior(scte),
+                                               betaPrior(scte),
+                                               K,
+                                               ncol(scte),
+                                               ndk(scte),
+                                               nwk(scte),
+                                               num_threads = num_threads,
+                                               maxiter = maxiter,
+                                               verbal = TRUE,
+                                               zero_gamma = FALSE,
+                                               rand_gamma = TRUE,
+                                               thresh = 0.00001,
+                                               lr =lr,
+                                               rho = 50000,
+                                               loss_fun = loss_fun,
+                                               m_update = TRUE)
+  return(scte)
+}
+
+
+
+
+
+
+
 ###predict full adjacency matrix
-get_all_pred <- function(spe,rtm_weights,loss_fun){
-  
-  return(nbr_pred(theta(spe),rtm_weights,1,loss_fun))
+get_all_pred <- function(spe,loss_fun){
+
+  return(nbr_pred(theta(spe),metadata(scte)[['RTM_weights']],1,loss_fun))
 }
 
 
@@ -30,7 +70,7 @@ build_ROC <- function(all_pred,grd_adj,nbr_list,full_adj = FALSE,
     if (full_adj){
       pred_adj[pred_adj > thresh] <- 1
       pred_adj[pred_adj <= thresh] <- 0
-      
+
       tp <- length(which((pred_adj + grd_adj) == 2))
       tn <- length(which((pred_adj + grd_adj) == 0))
       fp <- length(which((pred_adj - grd_adj) == 1))
@@ -46,20 +86,20 @@ build_ROC <- function(all_pred,grd_adj,nbr_list,full_adj = FALSE,
         sub_adj <-  pred_adj[cell,nbr_ids]
         sub_adj[sub_adj > thresh] <- 1
         sub_adj[sub_adj <= thresh] <- 0
-        
+
         tp <- tp + length(which((sub_adj + grd_adj) == 2))
         tn <- tn + length(which((sub_adj + grd_adj) == 0))
         fp <- fp + length(which((sub_adj - grd_adj) == 1))
         fn <- fn + length(which((sub_adj - grd_adj) == -1))
-        
+
         if (sum(c(tp,tn,fp,fn)) == 0){stop('Error with TP/TN/FP/FN Calculation!')}
       }
-      
-      
+
+
     }
-    
-    
-    
+
+
+
     tpr <- tp/(tp+fn)
     fpr <- fp/(fp+tn)
     sens <- tp/(tp+fn) #recall
@@ -68,8 +108,8 @@ build_ROC <- function(all_pred,grd_adj,nbr_list,full_adj = FALSE,
   }
   roc_list[[model_name]] <- perf_df[,1:4]
   #print(DescTools::AUC(perf_df[,2],perf_df[,1]))
-  
-  
+
+
   return(roc_list)
 }
 
@@ -87,7 +127,7 @@ plot_clusters <- function(spe,anno_label = '',test_sample = '',pred_list,cluster
   print(paste("ARI: ",round(cur_ari,3)))
   ari_plot <- vis_clus(spe,
                        clustervar = "clust",
-                       sampleid = test_sample) + 
+                       sampleid = test_sample) +
     labs(subtitle = paste(model_name," ARI: ",round(cur_ari,3),sep = ''))
   return(ari_plot)
 }
@@ -96,13 +136,13 @@ plot_clusters <- function(spe,anno_label = '',test_sample = '',pred_list,cluster
 rtm_cluster <- function(spe,adj_mat,method = 'Kmeans',clusters = 10){
   labels <- rep('',ncol(spe))
   if (method == 'Kmeans'){
-    
+
   } else if (method == 'Louvain'){
-    
+
   } else {
     stop("Only Kmeans or Louvain are accepted clustering methods")
   }
-  
+
   return(labels)
 }
 
@@ -115,7 +155,7 @@ rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
     else {dist_mat <- get_dist_cpp(as.matrix(colData(spe)[,c('array_row','array_col')]))}
   }
   new_labels <- as.character(labels)
-  
+
   if (!is.null(k)){
     for(i in 1:ncol(spe)){
       #Consider retaining current spot as a 'neighbor' to incorporate information in decision (tie-breaker)
@@ -128,7 +168,7 @@ rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
         as.matrix()
       #print(label_count)
       label_count <- label_count/sum(label_count)
-      
+
       new_labels[i] <- ifelse(any(label_count >= 0.5),
                               rownames(label_count)[which(label_count >= 0.5)],
                               new_labels[i])
@@ -144,13 +184,13 @@ rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
         as.matrix()
       #print(label_count)
       label_count <- label_count/sum(label_count)
-      
+
       new_labels[i] <- ifelse(any(label_count >= 0.5),
                               rownames(label_count)[which(label_count >= 0.5)],
                               new_labels[i])
     }
   }
-  
+
   return(new_labels)
 }
 
@@ -172,27 +212,27 @@ library(bluster)
 clust_optim <- function(spe, target_clusters, max_iterations = 100,
                         X = 'adj',k = 20,alg = 'louvain') {
   # Convert adjacency matrix to graph if necessary
-  
-  
+
+
   # Initialize resolution bounds and iteration counter
   min_res <- 0.01
   max_res <- 1.0
   iteration <- 0
-  
+
   while (iteration < max_iterations) {
     # Calculate midpoint resolution
     res <- (min_res + max_res) / 2
     iteration <- iteration + 1
-    
+
     # Run Louvain clustering with the current resolution
-    clustering <-  clusterCells(spe, 
-                                use.dimred = X, 
-                                BLUSPARAM = SNNGraphParam(k = k, 
+    clustering <-  clusterCells(spe,
+                                use.dimred = X,
+                                BLUSPARAM = SNNGraphParam(k = k,
                                                           cluster.fun = alg,
                                                           cluster.args = list(resolution = res)))
     # Get the number of clusters
     num_clusters <- length(unique(clustering))
-    
+
     # Check if the result matches the target number of clusters
     if (num_clusters == target_clusters) {
       return(list(clustering = clustering, resolution = res))
@@ -204,7 +244,7 @@ clust_optim <- function(spe, target_clusters, max_iterations = 100,
       max_res <- res
     }
   }
-  
+
   warning("Maximum iterations reached without finding the exact number of clusters")
   print(res)
   print(num_clusters)
@@ -232,7 +272,7 @@ get_perf <- function(spe,df,ground_truth,nbr_list,smooth = TRUE, k= NULL){
     }
     aricode::NMI(a[!is.na(a)],ground_truth[!is.na(a)])
   })
-  
+
 
   asw_perf <- apply(df,2,function(a){
     if (smooth){

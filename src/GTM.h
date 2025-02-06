@@ -1,11 +1,11 @@
-#ifndef SCGTM_H_
-#define SCGTM_H_
+#ifndef GTM_H_
+#define GTM_H_
 
 #include "CellMap.h"
 
 #include <RcppArmadillo.h>
-#include <cstdlib> 
-#include <omp.h> 
+#include <cstdlib>
+#include <omp.h>
 #include <RcppArmadilloExtensions/sample.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
@@ -27,7 +27,7 @@ void build_ndk(arma::mat& n_dk,
                std::unordered_map<int,Cell>& CellMap, int D, int K);
 
 
-// Complete 
+// Complete
 arma::mat get_theta(arma::mat& n_dk,
                     arma::mat& alpha);
 
@@ -42,7 +42,7 @@ double get_ELBO(std::unordered_map<int,Cell>& CellMap,
                 const arma::mat& beta,
                 int M,
                 int D,
-                int K, 
+                int K,
                 arma::mat& n_dk,
                 arma::mat& n_wk,
                 int C);
@@ -56,8 +56,8 @@ void run_epoch(std::unordered_map<int,Cell>& CellMap,
                arma::mat& n_wk,
                int num_threads);
 //COMPLETE
-void train_scgtm(arma::sp_mat& counts,
-                     arma::vec& celltypes, 
+void train_gtm(arma::sp_mat& counts,
+                     arma::vec& celltypes,
                      arma::vec& genes,
                      const arma::mat& alpha,
                      const arma::mat& beta,
@@ -78,8 +78,8 @@ void predict_epoch(std::unordered_map<int,Cell>& CellMap,const double& alpha,
                    int K,int D,int M,arma::mat& n_dk,
                    const arma::mat& phi, int num_threads);
 
-void predict_scgtm(arma::sp_mat& counts,
-                       arma::vec& celltypes, 
+void infer_topics_cpp(arma::sp_mat& counts,
+                       arma::vec& celltypes,
                        arma::vec& genes,
                        double& alpha,
                        int K,int D,int M,arma::mat& n_dk, const arma::mat& phi,

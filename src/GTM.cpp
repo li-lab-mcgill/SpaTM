@@ -1,5 +1,5 @@
 #include "CellMap.h"
-#include "scGTM.h"
+#include "GTM.h"
 #include <omp.h>
 
 #include <RcppArmadillo.h>
@@ -205,7 +205,7 @@ void run_epoch(std::unordered_map<int,Cell>& CellMap,const arma::mat& alpha,
 
 
 // [[Rcpp::export]]
-void train_scgtm(arma::sp_mat& counts,
+void train_gtm(arma::sp_mat& counts,
                      arma::vec& celltypes,
                      arma::vec& genes,
                      const arma::mat& alpha, const arma::mat& beta,
@@ -344,7 +344,7 @@ void predict_epoch(std::unordered_map<int,Cell>& CellMap,const double& alpha,
 
 
 // [[Rcpp::export]]
-void predict_scgtm(arma::sp_mat& counts,
+void infer_topics_cpp(arma::sp_mat& counts,
                        arma::vec& celltypes,
                        arma::vec& genes,
                        double& alpha,

@@ -3,6 +3,12 @@
 ## Class Union to simplify utility functions
 setClassUnion('TopicExperiment',c('SingleCellTopicExperiment','SpatialTopicExperiment'))
 
+##Update object - Deprecated
+update_scte <- function(scte,labels = NULL, guided = FALSE, K = 10){
+  scte <- buildPriors(scte,labels,guided,K)
+  scte <- build_SufStats(scte,ncol(alphaPrior(scte)))
+  return(scte)
+}
 
 #### Getters & Setters ####
 
@@ -291,17 +297,6 @@ setMethod("[", c("SpatialTopicExperiment", "ANY", "ANY"),
 })
 
 
-
-
-setReplaceMethod(
-  f = "rownames",
-  signature = c("TopicExperiment","character"),
-  function(te,values){
-    te@phi <- values
-    return(te)
-  }
-)
-
 ## Update dimnames
 setReplaceMethod("dimnames", c("SingleCellTopicExperiment", "list"),
                  function(x, value)
@@ -337,5 +332,4 @@ setReplaceMethod("dimnames", c("SpatialExperiment", "list"),
                      rownames(spatialCoords(x)) <- value[[2L]]  # Sync colnames with spatialCoords
                    }
                    return(x)})
-                 })
 

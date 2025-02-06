@@ -5,6 +5,22 @@ test_cell_map <- function(counts, celltypes, genes, alpha, beta, D, K, zero_gamm
     invisible(.Call(`_SpaTM_test_cell_map`, counts, celltypes, genes, alpha, beta, D, K, zero_gamma, rand_gamma, cellid))
 }
 
+get_theta <- function(n_dk, alpha) {
+    .Call(`_SpaTM_get_theta`, n_dk, alpha)
+}
+
+get_phi <- function(n_wk, beta) {
+    .Call(`_SpaTM_get_phi`, n_wk, beta)
+}
+
+train_gtm <- function(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0) {
+    invisible(.Call(`_SpaTM_train_gtm`, counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh))
+}
+
+infer_topics_cpp <- function(counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads = 1L, maxiter = 100L, verbal = TRUE) {
+    invisible(.Call(`_SpaTM_infer_topics_cpp`, counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads, maxiter, verbal))
+}
+
 test_RTM_cell <- function() {
     invisible(.Call(`_SpaTM_test_RTM_cell`))
 }
@@ -67,21 +83,5 @@ get_label_prob <- function(ndk_row, gamma_weight, gene_count, K, label, layers, 
 
 stm_torch_estep <- function(spe_counts, celltypes, genes, alpha, beta, K, D, zero_gamma, rand_gamma, labels, n_dk, n_wk, elbo_mat, layers, weights, elbo, num_threads = 1L, iter = 0L, dummy_topic = FALSE) {
     .Call(`_SpaTM_stm_torch_estep`, spe_counts, celltypes, genes, alpha, beta, K, D, zero_gamma, rand_gamma, labels, n_dk, n_wk, elbo_mat, layers, weights, elbo, num_threads, iter, dummy_topic)
-}
-
-get_theta <- function(n_dk, alpha) {
-    .Call(`_SpaTM_get_theta`, n_dk, alpha)
-}
-
-get_phi <- function(n_wk, beta) {
-    .Call(`_SpaTM_get_phi`, n_wk, beta)
-}
-
-train_scgtm <- function(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0) {
-    invisible(.Call(`_SpaTM_train_scgtm`, counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh))
-}
-
-predict_scgtm <- function(counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads = 1L, maxiter = 100L, verbal = TRUE) {
-    invisible(.Call(`_SpaTM_predict_scgtm`, counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads, maxiter, verbal))
 }
 

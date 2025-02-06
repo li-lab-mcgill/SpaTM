@@ -156,7 +156,7 @@ pred_mlp <- function(mlp,
 
 #
 
-STM <- function(spe, num_threads = 1L,
+STM_Torch <- function(spe, num_threads = 1L,
                 maxiter = 100L, verbal = TRUE,
                 zero_gamma = TRUE,
                 rand_gamma = FALSE, thresh = 0.00001,
@@ -292,7 +292,7 @@ STM <- function(spe, num_threads = 1L,
 
 
 
-STM_burnin <- function(spe, num_threads = 1L,
+STM_Torch_burnin <- function(spe, num_threads = 1L,
                        maxiter = 100L, verbal = TRUE,
                        zero_gamma = TRUE,
                        rand_gamma = FALSE, thresh = 0.00001,
