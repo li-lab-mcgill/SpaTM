@@ -130,7 +130,19 @@ setReplaceMethod(
 )
 
 #### Build Param Functions ####
-
+#' Build Alpha Prior Matrix
+#'
+#' Constructs the alpha prior matrix for topic modeling. If labels are provided,
+#' it creates a sparse matrix based on the provided labels; otherwise, it assigns
+#' a default Dirichlet prior.
+#'
+#' @param te A SingleCellTopicExperiment or SpatialTopicExperiment object.
+#' @param labels Character string specifying the column name in `colData(te)`
+#'        that contains labels for guiding topic assignment.
+#' @param K Integer specifying the number of topics (ignored if labels are provided).
+#'
+#' @return A matrix representing the alpha prior.
+#' @export
 build_alpha <- function(te,labels = NULL,K = 10){
   if (is.null(labels)){
     a <- matrix(1,ncol(te),K)
@@ -160,10 +172,32 @@ build_alpha <- function(te,labels = NULL,K = 10){
 
 
 }
+
+#' Build Beta Prior Matrix
+#'
+#' Constructs the beta prior matrix for topic modeling, assigning a default prior.
+#'
+#' @param te A SingleCellTopicExperiment or SpatialTopicExperiment object.
+#' @param K Integer specifying the number of topics.
+#'
+#' @return A matrix representing the beta prior.
+#' @export
 build_beta <- function(te,K){
   return(matrix(0.001, nrow = nrow(te),ncol = K))
 }
 
+
+#' Build Priors for Topic Modeling
+#'
+#' Initializes the alpha and beta prior matrices for a topic modeling experiment.
+#'
+#' @param te A SingleCellTopicExperiment or SpatialTopicExperiment object.
+#' @param labels Character string specifying the column name in `colData(te)` for topic guidance.
+#' @param guided Logical indicating whether topic modeling should be guided by labels.
+#' @param K Integer specifying the number of topics (ignored if guided is TRUE and labels are provided).
+#'
+#' @return The input `te` object with alpha and beta prior matrices initialized.
+#' @export
 buildPriors <- function(te,labels = NULL,guided = FALSE,K = 10){
   if (guided){
     if(!is.null(labels)){
@@ -179,12 +213,29 @@ buildPriors <- function(te,labels = NULL,guided = FALSE,K = 10){
   return(te)
 }
 
+#' Initialize Sufficient Statistics for Topic Modeling
+#'
+#' Initializes the sufficient statistics matrices (`ndk` and `nwk`) with zeros.
+#'
+#' @param te A SingleCellTopicExperiment or SpatialTopicExperiment object.
+#' @param K Integer specifying the number of topics.
+#'
+#' @return The input `te` object with initialized sufficient statistics.
+#' @export
 build_SufStats <- function(te,K){
   ndk(te) <- matrix(0,ncol(te),K)
   nwk(te) <- matrix(0,nrow(te),K)
   return(te)
 }
 
+#' Compute Theta Matrix (Cell-Topic Distributions)
+#'
+#' Computes the theta matrix, representing the per-cell topic distributions.
+#'
+#' @param te A SingleCellTopicExperiment or SpatialTopicExperiment object.
+#'
+#' @return The input `te` object with the `theta` matrix computed.
+#' @export
 buildTheta <- function(te){
   theta(te) <- get_theta(ndk(te),alphaPrior(te))
   colnames(theta(te)) <- colnames(alphaPrior(te))
@@ -192,6 +243,15 @@ buildTheta <- function(te){
   return(te)
 }
 
+
+#' Compute Phi Matrix (Gene-Topic Distributions)
+#'
+#' Computes the phi matrix, representing the per-gene topic distributions.
+#'
+#' @param te A SingleCellTopicExperiment or SpatialTopicExperiment object.
+#'
+#' @return The input `te` object with the `phi` matrix computed.
+#' @export
 buildPhi <- function(te){
   phi(te) <- get_phi(nwk(te),betaPrior(te))
   colnames(phi(te)) <- colnames(alphaPrior(te))

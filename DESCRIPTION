@@ -11,3 +11,5 @@ Imports: Rcpp (>= 1.0.10), SingleCellExperiment, SpatialExperiment, scran, scate
 Suggests:
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 7.3.2
+Encoding: UTF-8
+

@@ -9,6 +9,30 @@ library(cluster)
 
 
 #### Training ####
+#' Train a Relational Topic Model (RTM)
+#'
+#' This function trains a Relational Topic Model (RTM) on a `SpatialTopicExperiment` object.
+#' The RTM incorporates relational data (e.g., cell-cell interactions) into the topic modeling process.
+#'
+#' @param scte A `SpatialTopicExperiment` object containing the single-cell data.
+#' @param K An integer specifying the number of topics.
+#' @param nbr_list A list specifying the neighbors of individual cells.
+#' @param loss_fun An integer specifying the loss function to be used in RTM training (default: 1).
+#' @param num_threads An integer indicating the number of threads to use for parallel computation (default: 1).
+#' @param maxiter An integer specifying the maximum number of training iterations (default: 100).
+#' @param verbal A logical indicating whether to print progress messages (default: TRUE).
+#' @param zero_gamma A logical specifying whether to initialize gamma values to zero (default: FALSE).
+#' @param rand_gamma A logical indicating whether to randomly initialize gamma values (default: TRUE).
+#'
+#' @return A `SpatialTopicExperiment` object with updated RTM weights stored in `metadata(scte)[['RTM_weights']]`.
+#'
+#' @details
+#' The RTM extends topic modeling by incorporating relational information, such as neighborhood information.
+#' It uses a loss function specified by `loss_fun` to optimize the topic distributions.
+#'
+#' @seealso [GTM()] for the guided topic model.
+#'
+#' @export
 RTM <- function(scte,
                 K,
                 nbr_list,
@@ -48,6 +72,22 @@ RTM <- function(scte,
 
 
 ###predict full adjacency matrix
+#' Get All Predictions from Relational Topic Model (RTM)
+#'
+#' This function computes predictions using the trained RTM weights stored in the metadata of a `SpatialTopicExperiment` object.
+#'
+#' @param spe A `SpatialTopicExperiment` object
+#' @param loss_fun An integer specifying the loss function to be used for prediction.
+#'
+#' @return A matrix of predicted values based on the RTM model.
+#'
+#' @details
+#' This function retrieves the trained RTM weights from `metadata(spe)[['RTM_weights']]` and applies them to
+#' the topic distribution (`theta(spe)`) to compute relational topic predictions.
+#'
+#' @seealso [RTM()] for training the Relational Topic Model.
+#'
+#' @export
 get_all_pred <- function(spe,loss_fun){
 
   return(nbr_pred(theta(spe),metadata(scte)[['RTM_weights']],1,loss_fun))
@@ -55,7 +95,7 @@ get_all_pred <- function(spe,loss_fun){
 
 
 ## Build ROC Curve
-
+#' @export
 build_ROC <- function(all_pred,grd_adj,nbr_list,full_adj = FALSE,
                       titles = "Def. Title"){
   roc_list <- list()
@@ -116,7 +156,7 @@ build_ROC <- function(all_pred,grd_adj,nbr_list,full_adj = FALSE,
 
 
 
-
+#' @export
 plot_clusters <- function(spe,anno_label = '',test_sample = '',pred_list,clusters = 7,
                           model_name = 'Default Name'){
   #Run kmeans
@@ -132,7 +172,7 @@ plot_clusters <- function(spe,anno_label = '',test_sample = '',pred_list,cluster
   return(ari_plot)
 }
 
-
+#' @export
 rtm_cluster <- function(spe,adj_mat,method = 'Kmeans',clusters = 10){
   labels <- rep('',ncol(spe))
   if (method == 'Kmeans'){
@@ -146,6 +186,29 @@ rtm_cluster <- function(spe,adj_mat,method = 'Kmeans',clusters = 10){
   return(labels)
 }
 
+
+
+#' Smooth labels based on spatial proximity
+#'
+#' This function smooths the labels of spots in a spatial experiment object based on their spatial proximity to other spots. It assigns new labels to spots based on the labels of their neighboring spots.
+#'
+#' If `k` is provided, the function computes the spatial distance matrix between spots using their array coordinates (`array_row`, `array_col`) and considers the `k` nearest neighbors for smoothing. Otherwise, the function uses a user-provided list of neighbors for each spot.
+#'
+#' @param spe A `SpatialTopicExperiment` object. Note that `spe` must include a `spatialCoords` slot with array coordinates (`array_row`, `array_col`).
+#' @param labels A vector of current labels corresponding to each spot in `spe`.
+#' @param nbr_list A list where each element corresponds to a spot and contains indices of its neighbors.
+#' @param k An optional integer specifying the number of nearest neighbors to consider when smoothing the labels. If `NULL`, `nbr_list` is used instead.
+#'
+#' @return A character vector containing the new labels for each spot after smoothing.
+#'
+#' @examples
+#' # Example 1: Using k-nearest neighbors
+#' new_labels <- rtm_smooth(spe = spe_object, labels = initial_labels, nbr_list = NULL, k = 5)
+#'
+#' # Example 2: Using a pre-computed neighbor list
+#' new_labels <- rtm_smooth(spe = spe_object, labels = initial_labels, nbr_list = precomputed_nbr_list, k = NULL)
+#'
+#' @export
 rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
   if (!is.null(k)){
     coldata <- colnames(colData(spe))
@@ -194,7 +257,7 @@ rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
   return(new_labels)
 }
 
-
+#' @export
 check_nbr <- function(spe,nbr_set,cell_id,sample_id){
   spe$nbr <- NA
   spe$nbr[cell_id] <- 'Cur Cell'
@@ -207,8 +270,37 @@ check_nbr <- function(spe,nbr_set,cell_id,sample_id){
 }
 
 
-library(bluster)
 
+
+
+#' Optimize clustering resolution to achieve a target number of clusters
+#'
+#' This function performs clustering optimization by adjusting the resolution parameter in the Louvain algorithm until the target number of clusters is reached. It iteratively adjusts the resolution parameter, running clustering with each iteration, until the desired number of clusters is obtained or the maximum number of iterations is reached.
+#'
+#' The function uses an adjacency matrix to construct a graph and performs clustering on the reduced-dimensional representation of the spatial experiment object. The algorithm used for clustering is Louvain by default, but other algorithms can be specified.
+#'
+#' @param spe A `SpatialTopicExperiment` object.
+#' @param target_clusters The desired number of clusters to achieve.
+#' @param max_iterations The maximum number of iterations to run for adjusting the resolution (default is 100).
+#' @param X The name of the reduced dimension to use for clustering. Default is `'adj'`, which assumes an adjacency matrix is used for clustering.
+#' @param k The number of nearest neighbors to consider when constructing the graph (default is 20).
+#' @param alg The algorithm to use for clustering. The default is `'louvain'`, but other algorithms can be used (e.g., `'walktrap'`).
+#'
+#' @return A list with two elements:
+#'   \describe{
+#'     \item{clustering}{A vector of cluster assignments for each spot.}
+#'     \item{resolution}{The resolution parameter used to achieve the target number of clusters.}
+#'   }
+#'
+#' @examples
+#' # Example 1: Optimizing clustering to target 10 clusters
+#' result <- clust_optim(spe = spe_object, target_clusters = 10)
+#'
+#' # Example 2: Using a different clustering algorithm
+#' result <- clust_optim(spe = spe_object, target_clusters = 10, alg = 'leiden')
+#'
+#' @import bluster
+#' @export
 clust_optim <- function(spe, target_clusters, max_iterations = 100,
                         X = 'adj',k = 20,alg = 'louvain') {
   # Convert adjacency matrix to graph if necessary
@@ -251,6 +343,7 @@ clust_optim <- function(spe, target_clusters, max_iterations = 100,
   return(list(clustering = clustering, resolution = res))
 }
 
+#' @export
 minmax_norm <- function(adj_mat){
   min_val <- min(adj_mat)
   max_val <- max(adj_mat)
@@ -258,7 +351,7 @@ minmax_norm <- function(adj_mat){
   return(adj_norm)
 }
 
-
+#' @export
 get_perf <- function(spe,df,ground_truth,nbr_list,smooth = TRUE, k= NULL){
   ari_perf <- apply(df,2,function(a){
     if (smooth){
@@ -290,6 +383,8 @@ get_perf <- function(spe,df,ground_truth,nbr_list,smooth = TRUE, k= NULL){
   return(out_df)
 }
 
+
+#' @export
 plot_perf <- function(spe, df, perf, nbr_list, smooth = TRUE, k = NULL) {
   all_plots <- list()
   for (i in 1:ncol(df)) {

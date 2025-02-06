@@ -34,7 +34,7 @@ get_spots <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 0
                                            n,
                                            prob = 1/(1 + exp(-dist_mat[i,-i])))-1,
                                     rep(0,n)))
-     } 
+     }
     }
   }else {
     for (i in colData(spe)[,cell_ids]){
@@ -97,7 +97,7 @@ rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
         as.matrix()
       #print(label_count)
       label_count <- label_count/sum(label_count)
-      
+
       new_labels[i] <- ifelse(any(label_count >= 0.5),
                               rownames(label_count)[which(label_count >= 0.5)],
                               new_labels[i])
@@ -113,17 +113,17 @@ rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
         as.matrix()
       #print(label_count)
       label_count <- label_count/sum(label_count)
-      
+
       new_labels[i] <- ifelse(any(label_count >= 0.5),
                               rownames(label_count)[which(label_count >= 0.5)],
                               new_labels[i])
     }
   }
-  
+
   return(new_labels)
 }
 
-###################3
+###################
 check_nbr <- function(spe,nbr_set,cell_id,sample_id){
   spe$nbr <- NA
   spe$nbr[cell_id] <- 'Cur Cell'

@@ -4,9 +4,20 @@
 
 
 #### Extending SCE object
-#' @rdname SingleCellTopicExperiment
-#' @exportClass SingleCellTopicExperiment SpaTM
-#' @importFrom SingleCellExperiment SingleCellExperiment
+#' SingleCellTopicExperiment Class
+#'
+#' A class that extends `SingleCellExperiment` to incorporate topic modeling
+#' components for single-cell RNA-seq analysis.
+#'
+#' @slot theta A matrix representing cell-topic distributions.
+#' @slot phi A matrix representing gene-topic distributions.
+#' @slot alphaPrior A matrix representing prior information for cell-topic distributions.
+#' @slot betaPrior A matrix representing prior information for gene-topic distributions.
+#' @slot nwk A matrix storing gene-topic counts.
+#' @slot ndk A matrix storing cell-topic counts.
+#'
+#' @importFrom methods setClass
+#' @export
 setClass(
   "SingleCellTopicExperiment",
   contains="SingleCellExperiment",
@@ -19,7 +30,23 @@ setClass(
 )
 
 ##### Constructor/Prep Function ####
-
+#' Constructor for SingleCellTopicExperiment
+#'
+#' Initializes a `SingleCellTopicExperiment` object from a `SingleCellExperiment` object,
+#' optionally filtering for highly variable genes (HVG) and setting topic modeling priors.
+#'
+#' @param sce A `SingleCellExperiment` object containing single-cell RNA-seq data.
+#' @param guided Logical. If `TRUE`, topic modeling is guided by metadata labels.
+#' @param labels A character string specifying the column name in `colData(sce)` that contains metadata labels.
+#' @param K Integer. The number of topics to use. Defaults to 10 if not provided.
+#' @param hvg Integer or NULL. If numeric, filters for the top `hvg` highly variable genes.
+#' @param verbal Logical. If `TRUE`, prints progress messages.
+#'
+#' @return A `SingleCellTopicExperiment` object with initialized topic modeling components.
+#'
+#' @import scuttle
+#' @importFrom scran modelGeneVar getTopHVGs
+#' @export
 SingleCellTopicExperiment <- function(sce,guided = FALSE,
                                       labels = NULL,
                                       K = NULL,

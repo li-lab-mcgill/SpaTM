@@ -2,9 +2,20 @@
 
 
 #### Extending spe object
-#' @rdname SpatialTopicExperiment
-#' @exportClass SpatialTopicExperiment SpaTM
-#' @importFrom SpatialExperiment SpatialExperiment
+#' SpatialTopicExperiment Class and Constructor
+#'
+#' The `SpatialTopicExperiment` class extends `SpatialExperiment`, incorporating topic modeling
+#' for spatial transcriptomics data. It follows the same logic as `SingleCellTopicExperiment` (@seealso [SingleCellTopicExperiment()]),
+#' adapting it for spatial data.
+#'
+#' @slot theta A matrix storing cell-topic distributions.
+#' @slot phi A matrix storing gene-topic distributions.
+#' @slot alphaPrior A matrix storing topic priors per cell.
+#' @slot betaPrior A matrix storing gene priors per topic.
+#' @slot nwk A matrix storing topic-gene counts.
+#' @slot ndk A matrix storing topic-cell counts.
+#'
+#' @export
 setClass(
   "SpatialTopicExperiment",
   contains="SpatialExperiment",
@@ -17,7 +28,23 @@ setClass(
 )
 
 ##### Constructor/Prep Function ####
-
+#' Constructor for SpatialTopicExperiment
+#'
+#' Initializes a `SpatialTopicExperiment` object, setting up topic modeling structures
+#' for spatial transcriptomics data. It follows a similar process as `SingleCellTopicExperiment`.
+#'
+#' @param spe A `SpatialExperiment` object.
+#' @param guided Logical; if `TRUE`, the initialization is guided by cell labels.
+#' @param labels A character string specifying the column in `colData(spe)` containing cell labels.
+#' @param K Number of topics. If `NULL` and `guided` is `FALSE`, defaults to `K = 10`.
+#' @param hvg Integer specifying the number of highly variable genes to retain.
+#' @param verbal Logical; if `TRUE`, prints progress messages.
+#'
+#' @return A `SpatialTopicExperiment` object initialized with topic modeling parameters.
+#'
+#' @export
+#' @import scuttle
+#' @importFrom scran modelGeneVar getTopHVGs
 SpatialTopicExperiment <- function(spe,guided = FALSE,
                                       labels = NULL,
                                       K = NULL,
