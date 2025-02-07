@@ -15,6 +15,8 @@ update_scte <- function(scte,labels = NULL, guided = FALSE, K = 10){
 #### Alpha Prior ####
 setGeneric("alphaPrior", function(te) standardGeneric("alphaPrior"))
 setGeneric("alphaPrior<-", function(te, values) standardGeneric("alphaPrior<-"))
+
+#' @export
 setMethod(
   f = "alphaPrior",
   signature = c("TopicExperiment"),
@@ -22,6 +24,7 @@ setMethod(
     return(te@alphaPrior)
   }
 )
+#' @export
 setReplaceMethod(
   f = "alphaPrior",
   signature = c("TopicExperiment"),
@@ -35,6 +38,7 @@ setReplaceMethod(
 #### Beta Prior ####
 setGeneric("betaPrior", function(te) standardGeneric("betaPrior"))
 setGeneric("betaPrior<-", function(te, values) standardGeneric("betaPrior<-"))
+#' @export
 setMethod(
   f = "betaPrior",
   signature = "TopicExperiment",
@@ -42,6 +46,7 @@ setMethod(
     return(te@betaPrior)
   }
 )
+#' @export
 setReplaceMethod(
   f = "betaPrior",
   signature = "TopicExperiment",
@@ -55,6 +60,7 @@ setReplaceMethod(
 ## Cell by Topics (ndk) ####
 setGeneric("ndk", function(te) standardGeneric("ndk"))
 setGeneric("ndk<-", function(te, values) standardGeneric("ndk<-"))
+#' @export
 setMethod(
   f = "ndk",
   signature = "TopicExperiment",
@@ -63,6 +69,7 @@ setMethod(
   }
 )
 
+#' @export
 setReplaceMethod(
   f = "ndk",
   signature = "TopicExperiment",
@@ -75,6 +82,7 @@ setReplaceMethod(
 ## Gene by Topics (nwk) ####
 setGeneric("nwk", function(te) standardGeneric("nwk"))
 setGeneric("nwk<-", function(te, values) standardGeneric("nwk<-"))
+#' @export
 setMethod(
   f = "nwk",
   signature = "TopicExperiment",
@@ -82,6 +90,8 @@ setMethod(
     return(te@nwk)
   }
 )
+
+#' @export
 setReplaceMethod(
   f = "nwk",
   signature = "TopicExperiment",
@@ -94,6 +104,8 @@ setReplaceMethod(
 ## Theta ####
 setGeneric("theta", function(te) standardGeneric("theta"))
 setGeneric("theta<-", function(te, values) standardGeneric("theta<-"))
+
+#' @export
 setMethod(
   f = "theta",
   signature = "TopicExperiment",
@@ -101,6 +113,8 @@ setMethod(
     return(te@theta)
   }
 )
+
+#' @export
 setReplaceMethod(
   f = "theta",
   signature = "TopicExperiment",
@@ -113,6 +127,8 @@ setReplaceMethod(
 ##Phi ####
 setGeneric("phi", function(te) standardGeneric("phi"))
 setGeneric("phi<-", function(te, values) standardGeneric("phi<-"))
+
+#' @export
 setMethod(
   f = "phi",
   signature = "TopicExperiment",
@@ -120,6 +136,8 @@ setMethod(
     return(te@phi)
   }
 )
+
+#' @export
 setReplaceMethod(
   f = "phi",
   signature = "TopicExperiment",

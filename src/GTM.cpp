@@ -153,8 +153,8 @@ void run_epoch(std::unordered_map<int,Cell>& CellMap,const arma::mat& alpha,
     arma::mat m = CellMap[i].cell_mtx; //TODO
     int ndk_id = i-1; //To accomodate row indices for matrix
     int tokens = m.n_rows;
-    double diff = 1;
-    int max_update = 1;
+    //double diff = 1;
+    //int max_update = 1;
     //int u = 0;
     //arma::rowvec cur_ndk = n_dk.row(ndk_id);
     //Gamma burn-in
@@ -184,8 +184,8 @@ void run_epoch(std::unordered_map<int,Cell>& CellMap,const arma::mat& alpha,
 
       //M-Step
       n_dk.row(ndk_id) += (gamma_k * counts) - cur_counts;
-      n_wk.row(gene) += (gamma_k * counts);// - cur_counts; // NOTE: this line is moved inside the critical block
-      nwk_sum += (gamma_k * counts); //- cur_counts;
+      n_wk.row(gene) += (gamma_k * counts) - cur_counts; // NOTE: this line is moved inside the critical block
+      nwk_sum += (gamma_k * counts) - cur_counts;
 
     }
     //  diff = abs(arma::accu(cur_ndk - n_dk.row(ndk_id)));
@@ -229,9 +229,12 @@ void train_gtm(arma::sp_mat& counts,
                                                         beta,
                                                         D,K,
                                                         zero_gamma,
-                                                        rand_gamma);
+                                                        rand_gamma,
+                                                        verbal);
 
-  Rcout << "CellMap is built" << std::endl;
+  if (verbal){
+    Rcout << "CellMap is built" << std::endl;
+  }
   //Complete
   build_nwk(n_wk,CellMap,D,K);
 
@@ -272,13 +275,15 @@ void train_gtm(arma::sp_mat& counts,
 
     if (i > 0){
       if (abs(cur_elbo - old_elbo) < thresh){
-        Rcout.flush();
-        Rcout << "[";
-        for(int p = 0; p < prog_width; p++){
-          Rcout << "=" ;
+        if (verbal){
+          Rcout.flush();
+          Rcout << "[";
+          for(int p = 0; p < prog_width; p++){
+            Rcout << "=" ;
+          }
+          Rcout << "] " << "100% || Iter: " << i << " || ELBO: "<< cur_elbo << std::endl;
+          Rcout << "Model Converged at iteration : " << i << std::endl;
         }
-        Rcout << "] " << "100% || Iter: " << i << " || ELBO: "<< cur_elbo << std::endl;
-        Rcout << "Model Converged at iteration : " << i << std::endl;
 
         return;
       }
@@ -287,13 +292,15 @@ void train_gtm(arma::sp_mat& counts,
     old_elbo = cur_elbo;
 
   }
-  Rcout.flush();
-  Rcout << "[";
-  for(int p = 0; p < prog_width; p++){
-    Rcout << "=" ;
+  if (verbal){
+    Rcout.flush();
+    Rcout << "[";
+    for(int p = 0; p < prog_width; p++){
+      Rcout << "=" ;
+    }
+    Rcout << "] " << "100% || Iter: " << maxiter << " || ELBO: "<< cur_elbo << std::endl;
+    Rcout << "Max Iteration Reached" << std::endl;
   }
-  Rcout << "] " << "100% || Iter: " << maxiter << " || ELBO: "<< cur_elbo << std::endl;
-  Rcout << "Max Iteration Reached" << std::endl;
 
   return;
 

@@ -5,8 +5,43 @@ library(RcppArmadillo)
 library(utils)
 library(progress)
 #Build mlp
-build_mlp <- function(layers = 1,d_in,d_hidden,d_out,device = torch_device('cpu'),
+
+
+#' Build a Multi-Layer Perceptron (MLP) Model
+#'
+#' This function constructs a multi-layer perceptron (MLP) model with up to 3 hidden layers. The model can be used for tasks such as classification, and the number of hidden layers and their sizes are configurable.
+#' If a dummy topic is used, the input dimension is adjusted accordingly.
+#'
+#' @param layers Integer indicating the number of hidden layers. Must be between 0 and 3 (default is 1).
+#' @param d_in Integer specifying the input dimension (number of input features).
+#' @param d_hidden A vector of integers specifying the dimensions of the hidden layers. The length of the vector determines the number of hidden layers.
+#'   For example, if `layers = 2`, `d_hidden` should have two elements (e.g., `c(64, 32)`).
+#' @param d_out Integer specifying the output dimension (e.g., the number of classes or topics).
+#' @param device The device on which to run the model. Defaults to `"cpu"`. Can be set to `"cuda"` for GPU acceleration if available.
+#' @param dummy_topic Logical indicating whether to include a dummy topic in the input (default is `FALSE`).
+#'   If `TRUE`, the input dimension (`d_in`) is reduced by 1 to account for the dummy topic.
+#'
+#' @return An MLP model (of class `nn_module`) for the specified architecture. The model consists of sequential layers, including:
+#'   - `nn_linear`: Linear transformations between layers.
+#'   - `nn_relu`: ReLU activation functions.
+#'   - `nn_softmax`: Softmax activation function applied to the output layer.
+#'
+#' @examples
+#' # Example 1: Build a 1-hidden-layer MLP with 100 input features, 50 hidden units, and 10 output units.
+#' mlp_model <- build_mlp(layers = 1, d_in = 100, d_hidden = 50, d_out = 10)
+#'
+#' # Example 2: Build a 2-hidden-layer MLP with 100 input features, 64 and 32 hidden units, and 10 output units.
+#' mlp_model <- build_mlp(layers = 2, d_in = 100, d_hidden = c(64, 32), d_out = 10)
+#'
+#' # Example 3: Build a 3-hidden-layer MLP with a dummy topic.
+#' mlp_model <- build_mlp(layers = 3, d_in = 100, d_hidden = c(64, 32, 16), d_out = 10, dummy_topic = TRUE)
+#'
+#' @export
+build_mlp <- function(layers = 1,d_in,d_hidden,d_out,device = NULL,
                       dummy_topic = FALSE){
+  if (!requireNamespace("torch", quietly = TRUE)) {
+    stop('You do not have torch installed. Please install it before trying to use the STM-Torch workflow')
+  }
   ## Dummy Topic Edit
   if (dummy_topic){
     d_in <- d_in - 1
@@ -52,6 +87,7 @@ build_mlp <- function(layers = 1,d_in,d_hidden,d_out,device = torch_device('cpu'
   return(mlp)
 }
 
+#' @export
 mlp_data <- dataset(
   name = 'stm_data',
   initialize = function(x,y){
@@ -73,7 +109,11 @@ mlp_data <- dataset(
 
 
 # Define fitting function
+#' @export
 fit_mlp <- function(mlp, train_dl, lr, max_epoch,class_prop) {
+  if (!requireNamespace("torch", quietly = TRUE)) {
+    stop('You do not have torch installed. Please install it before trying to use the STM-Torch workflow')
+  }
   opt <- optim_adam(mlp$parameters, lr = lr,weight_decay = lr/2)
   loss_fn <- nn_cross_entropy_loss(weight = class_prop)
 
@@ -102,40 +142,10 @@ fit_mlp <- function(mlp, train_dl, lr, max_epoch,class_prop) {
   return(mlp)
 }
 
-# Define fitting function
-alt_fit_mlp <- function(mlp, x,y, lr, max_epoch,batch_size) {
-  opt <- optim_adam(mlp$parameters, lr = lr,weight_decay = lr/2)
-  loss_fn <- nn_cross_entropy_loss()
 
 
-  for (i in 1:max_epoch) {
-    batch_ids <- sample(1:dim(y))
-    batches <- split(batch_ids,ceiling(seq_along(batch_ids)/batch_size))
-    for (batch in batches){
-      x_train <- x[batch,]
-      y_train <- y[batch,]
-      # Train_Pred
-      y_pred <- mlp(x_train)
-      # %>%
-      #   nnf_log_softmax(dim = 2)
-      loss <- loss_fn(y_pred, y_train)
-
-      # Backpropagation
-      opt$zero_grad()
-      loss$backward()
-
-      # Update weights
-      opt$step()
-    }
-
-  }
-
-  return(mlp)
-}
-
-
-
-
+## TODO Add GLM Prediction function
+#' @export
 pred_mlp <- function(mlp,
                      x,device = torch_device('cpu'),
                      dummy_topic = FALSE){
@@ -155,7 +165,7 @@ pred_mlp <- function(mlp,
 }
 
 #
-
+#' @export
 STM_Torch <- function(spe, num_threads = 1L,
                 maxiter = 100L, verbal = TRUE,
                 zero_gamma = TRUE,
@@ -340,6 +350,45 @@ STM_Torch_burnin <- function(spe, num_threads = 1L,
 ## TODO add class imbalance to GLM
 ## TODO Use MLP wrapper within this function for ease of use
 ## TODO Resolve Torch openMP bug!
+
+
+#' Spatial Topic Modeling (STM) for Single-Cell Spatial Data
+#'
+#' This function performs spatial topic modeling on single-cell spatial transcriptomics data. It offers two modes:
+#' 1. GLM-STM (default): A generalized linear model for topic modeling.
+#' 2. Torch-STM: A deep learning-based STM model using a multi-layer perceptron (MLP).
+#'
+#' The function supports various parameters for training, including regularization, optimization settings, and the option for a validation set to prevent overfitting in the Torch-STM mode.
+#'
+#' @param spe A spatial experiment object (typically of class `SummarizedExperiment`) containing spatial transcriptomics data, including counts, metadata, and gene information.
+#' @param num_threads Number of threads to use for parallel computation (default is 1).
+#' @param maxiter Maximum number of iterations for model training (default is 100).
+#' @param verbal Logical indicating whether to display progress messages (default is `TRUE`).
+#' @param zero_gamma Logical indicating whether to initialize the gamma parameters to zero (default is `TRUE`).
+#' @param rand_gamma Logical indicating whether to randomize the gamma parameters (default is `FALSE`).
+#' @param thresh Convergence threshold for stopping the model training (default is 0.00001).
+#' @param lr Learning rate for optimization (default is 0.0001).
+#' @param mlp Optional, a model definition for the multi-layer perceptron (MLP) when running Torch-STM. If `NULL`, GLM-STM is run.
+#' @param mlp_layers Optional, a vector specifying the number of units in each layer of the MLP.
+#' @param mlp_epoch Optional, the number of epochs for training the MLP.
+#' @param spe_val A validation set (typically of class `SummarizedExperiment`) used for monitoring overfitting in Torch-STM. Must be provided for Torch-STM.
+#' @param device The device for training (e.g., "cpu" or "cuda") when using Torch-STM. If `NULL`, the default device is used.
+#' @param balanced_class Logical indicating whether to balance the class distribution during model training (default is `TRUE`).
+#' @param dummy_topic Logical indicating whether to add a dummy topic for regularization (default is `FALSE`).
+#' @param burnin Number of iterations for burn-in phase in Torch-STM (default is 5).
+#'
+#' @return The input spatial experiment object (`spe`) with updated metadata containing the STM model results:
+#'   - `STM_Weights`: A matrix of learned topic weights (GLM-STM).
+#'   - `STM_MLP`: The trained MLP model (Torch-STM).
+#'
+#' @examples
+#' # Example 1: Running GLM-STM with default settings
+#' spe_result <- STM(spe = spe_object)
+#'
+#' # Example 2: Running Torch-STM with MLP model
+#' spe_result <- STM(spe = spe_object, mlp = my_mlp_model, mlp_layers = c(64, 32), spe_val = spe_validation)
+#'
+#' @export
 STM <- function(spe, num_threads = 1L,
                       maxiter = 100L, verbal = TRUE,
                       zero_gamma = TRUE,
@@ -378,6 +427,9 @@ STM <- function(spe, num_threads = 1L,
     message('Running Torch-STM')
     if (is.null(spe_val)){
       stop('Need to have a validation set to ensure there is no overfitting')
+    }
+    if (!requireNamespace("torch", quietly = TRUE)) {
+      stop('You do not have torch installed. Please install it before trying to use the STM-Torch workflow')
     }
     STM_Torch_burnin(spe_train,
                      num_threads,

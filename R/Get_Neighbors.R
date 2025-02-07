@@ -2,11 +2,37 @@ library(spatialLIBD)
 library(tidyverse)
 library(Matrix)
 
-# spe - SPE object
-# samples - colData column name for sample  IDs
-# cell_ids - colData column name for cell IDs
-#cpp function that takes a matrix with two columns of coordinates and returns a matrix of distances
-get_spots <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 0){
+#' Get neighboring spots based on spatial distance and grouping
+#'
+#' This function identifies neighboring spots for each spot in a spatial experiment object based on their spatial coordinates. It can consider spots from the same sample and group, and allows for the inclusion of loss functions to modify neighbor selection.
+#'
+#' If `group_by` is provided, the function selects neighbors from the same sample and group, and may sample neighbors based on spatial proximity. If no `group_by` is given, neighbors are selected within a given distance threshold (`dist`) from the current spot, and optionally modified by a loss function.
+#'
+#' @param spe A `SpatialTopicExperiment` object.
+#' @param samples The column name in `colData(spe)` representing sample identifiers.
+#' @param cell_ids The column name in `colData(spe)` representing cell identifiers.
+#' @param group_by The column name in `colData(spe)` to group the spots by. If `NULL`, no grouping is performed, and neighbors are selected based on distance alone.
+#' @param dist The maximum spatial distance within which to consider spots as neighbors (default is 1).
+#' @param loss_fun A numeric value to control the use of loss functions:
+#'   - 0: No loss function applied.
+#'   - 1: Applies a loss function that includes randomly selected negative neighbors based on spatial distance.
+#'   - 2: Applies a Euclidean distance-based loss function.
+#'
+#' @return A list where each element corresponds to a spot, and contains its neighboring spots, represented by a matrix with indices and weights.
+#'   If a loss function is used, additional information will be appended to the matrix.
+#'
+#' @examples
+#' # Example 1: Getting neighbors for spots grouped by a specific column
+#' nbr_list <- get_nbrs(spe = spe_object, samples = "sample_id", cell_ids = "cell_id", group_by = "group", dist = 1)
+#'
+#' # Example 2: Getting neighbors without grouping, applying a distance threshold and no loss function
+#' nbr_list <- get_nbrs(spe = spe_object, samples = "sample_id", cell_ids = "cell_id", dist = 1, loss_fun = 0)
+#'
+#' # Example 3: Using a loss function to sample negative neighbors
+#' nbr_list <- get_nbrs(spe = spe_object, samples = "sample_id", cell_ids = "cell_id", loss_fun = 1)
+#'
+#' @export
+get_nbrs <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 0){
   coldata <- colnames(colData(spe))
   if (!all(c('array_row','array_col') %in% coldata)){
     stop('Error: array_row and array_col not found in spe metadata.This function assumes that spatial array coordinates are stored under these two names.')
@@ -74,56 +100,8 @@ get_spots <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 0
 }
 
 
-##########
-rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
-  if (!is.null(k)){
-    coldata <- colnames(colData(spe))
-    if (!all(c('array_row','array_col') %in% coldata)){
-      stop('Error: array_row and array_col not found in spe metadata.This function assumes that spatial array coordinates are stored under these two names.')
-    }
-    else {dist_mat <- get_dist_cpp(as.matrix(colData(spe)[,c('array_row','array_col')]))}
-  }
-  new_labels <- as.character(labels)
 
-  if (!is.null(k)){
-    for(i in 1:ncol(spe)){
-      #Consider retaining current spot as a 'neighbor' to incorporate information in decision (tie-breaker)
-      cur_nbr <- dist_mat[i,-i]
-      cur_idx <- 1:ncol(spe)
-      cur_idx <- cur_idx[-i]
-      cur_idx <- cur_idx[order(cur_nbr,decreasing = FALSE)[1:k]]
-      cur_labels <- labels[cur_idx]
-      label_count <- table(cur_labels) %>%
-        as.matrix()
-      #print(label_count)
-      label_count <- label_count/sum(label_count)
-
-      new_labels[i] <- ifelse(any(label_count >= 0.5),
-                              rownames(label_count)[which(label_count >= 0.5)],
-                              new_labels[i])
-    }
-  } else{
-    for(i in 1:ncol(spe)){
-      cur_nbr <- nbr_list[[i]]
-      if(is.matrix(cur_nbr)){
-        cur_nbr <- cur_nbr[cur_nbr[,2] == 1,1] + 1
-      }
-      cur_labels <- labels[cur_nbr]
-      label_count <- table(cur_labels) %>%
-        as.matrix()
-      #print(label_count)
-      label_count <- label_count/sum(label_count)
-
-      new_labels[i] <- ifelse(any(label_count >= 0.5),
-                              rownames(label_count)[which(label_count >= 0.5)],
-                              new_labels[i])
-    }
-  }
-
-  return(new_labels)
-}
-
-###################
+################### Deprecated function - used for debugging get_nbrs
 check_nbr <- function(spe,nbr_set,cell_id,sample_id){
   spe$nbr <- NA
   spe$nbr[cell_id] <- 'Cur Cell'

@@ -29,7 +29,7 @@ Cell::Cell(int id,arma::mat cellmtx,
   arma::rowvec beta_sum = arma::sum(beta,0);
   int gene,cell;
   arma::rowvec gamma_k = arma::zeros<arma::rowvec>(K);
-  
+
   //Initialize posteriors
   for (int i = 0; i < tokens; i++){
     if (zero_gamma){
@@ -46,7 +46,7 @@ Cell::Cell(int id,arma::mat cellmtx,
       gamma_k = alpha.row(cell) % beta.row(gene) / beta_sum;
       gamma_k = gamma_k/sum(gamma_k);
     }
-    
+
 
     //sequential par
     cell_gamma.row(i) = gamma_k;
@@ -91,64 +91,67 @@ void Cell::print() {
 // }
 //build Cell hash list
 std::unordered_map<int,Cell> build_Cell_Map(arma::sp_mat& counts,
-                                            arma::vec& celltypes, 
+                                            arma::vec& celltypes,
                                             arma::vec& genes,
                                             const arma::mat& alpha,
                                             const arma::mat& beta,
                                             int D, int K,
                                             bool zero_gamma,
-                                            bool rand_gamma = true){
+                                            bool rand_gamma = true,
+                                            bool verbal = false){
   std::unordered_map<int,Cell> CellMap;
   //int cell_start,cell_end;
   for (int i = 0; i < D; i++){
     arma::uvec geneidx = arma::find(counts.col(i));
     arma::mat mtx(geneidx.n_elem,3);
-    
+
     mtx.col(0) = arma::nonzeros(counts.col(i));//counts(nonzero_counts);
     mtx.col(1).fill(celltypes(i));
     mtx.col(2) = genes(geneidx);
-    if ( i == 10000){
-      Rcout << i << " Cells Processed" << std::endl;
-    }
-    else if ( i == 50000){
-      Rcout << i << " Cells Processed" << std::endl;
-    }
-    else if (i == 100000){
-      Rcout << i << " Cells Processed" << std::endl;
-    }
-    else if (i == 150000){
-      Rcout << i << " Cells Processed" << std::endl;
+    if (verbal){
+      if ( i == 10000){
+        Rcout << i << " Cells Processed" << std::endl;
+      }
+      else if ( i == 50000){
+        Rcout << i << " Cells Processed" << std::endl;
+      }
+      else if (i == 100000){
+        Rcout << i << " Cells Processed" << std::endl;
+      }
+      else if (i == 150000){
+        Rcout << i << " Cells Processed" << std::endl;
+      }
     }
     CellMap[i+1] = Cell(i+1,mtx,alpha,beta,K,
                         zero_gamma,
                         rand_gamma);
   }
-  
+
   return CellMap;
 }
 
 std::unordered_map<int,Cell> build_Predict_Cell_Map(arma::sp_mat& counts,
-                                                    arma::vec& celltypes, 
+                                                    arma::vec& celltypes,
                                                     arma::vec& genes,
                                                     int D, int K){
   std::unordered_map<int,Cell> CellMap;
-  
+
   for (int i = 0; i < D; i++){
     arma::uvec geneidx = arma::find(counts.col(i));
     arma::mat mtx(geneidx.n_elem,3);
-    
+
     mtx.col(0) = arma::nonzeros(counts.col(i));//counts(nonzero_counts);
     mtx.col(1).fill(celltypes(i));
     mtx.col(2) = genes(geneidx);
     CellMap[i+1] = Cell(i+1,mtx,K);
   }
-  
+
   return CellMap;
 }
 
 // [[Rcpp::export]]
 void test_cell_map(arma::sp_mat& counts,
-                   arma::vec& celltypes, 
+                   arma::vec& celltypes,
                    arma::vec& genes,
                    const arma::mat& alpha,
                    const arma::mat& beta,
@@ -165,7 +168,7 @@ void test_cell_map(arma::sp_mat& counts,
                                                      zero_gamma,
                                                      rand_gamma);
   temp[cellid].print();
-  
+
   Rcout << "function ran" << std::endl;
 }
 

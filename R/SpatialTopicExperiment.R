@@ -45,13 +45,18 @@ setClass(
 #' @export
 #' @import scuttle
 #' @importFrom scran modelGeneVar getTopHVGs
+#' @importClassesFrom Matrix dgCMatrix
 SpatialTopicExperiment <- function(spe,guided = FALSE,
                                       labels = NULL,
                                       K = NULL,
                                       hvg = NULL,
                                       verbal = FALSE){
+  if (!is(counts(spe),'dgCMatrix')){
+    message('Converting counts to sparse matrix (dgCmatrix). \nSpaTM is currently not compatible with other matrix formats.')
+    counts(spe) <- as(counts(spe),'dgCMatrix')
+  }
   if (!guided & is.null(K)){
-    cat('No guided or topic number provided. Setting topics to K = 10. \nIf this is an error please re-run the function and assign a number of topics or a guide variable.\n')
+    message('No guided or topic number provided. Setting topics to K = 10. \nIf this is an error please re-run the function and assign a number of topics or a guide variable.\n')
     K <- 10
   }
   if (is.numeric(hvg)){
