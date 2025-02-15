@@ -37,24 +37,8 @@ nbr_pred <- function(theta, weights, max_val = 1, loss_fun = 0L) {
     .Call(`_SpaTM_nbr_pred`, theta, weights, max_val, loss_fun)
 }
 
-get_CE <- function(pred_adj, grd_adj) {
-    .Call(`_SpaTM_get_CE`, pred_adj, grd_adj)
-}
-
-get_acc <- function(pred_adj, grd_adj, thresh = 0.5) {
-    .Call(`_SpaTM_get_acc`, pred_adj, grd_adj, thresh)
-}
-
 get_dist_cpp <- function(x) {
     .Call(`_SpaTM_get_dist_cpp`, x)
-}
-
-rtm_mlp_forward <- function(X, layers, weights) {
-    .Call(`_SpaTM_rtm_mlp_forward`, X, layers, weights)
-}
-
-mlp_nbr_pred <- function(X, layers, weights) {
-    .Call(`_SpaTM_mlp_nbr_pred`, X, layers, weights)
 }
 
 test_stm_cell <- function() {

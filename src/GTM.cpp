@@ -143,10 +143,10 @@ void run_epoch(std::unordered_map<int,Cell>& CellMap,const arma::mat& alpha,
   arma::rowvec beta_sum = arma::sum(beta,0);
   arma::rowvec nwk_sum = arma::sum(n_wk,0);
   //int gene,counts,ndk_id;
-  arma::rowvec gamma_k = arma::zeros<arma::rowvec>(K);
-  arma::rowvec cur_counts = arma::zeros<arma::rowvec>(K);
+  //arma::rowvec gamma_k = arma::zeros<arma::rowvec>(K);
+  //arma::rowvec cur_counts = arma::zeros<arma::rowvec>(K);
   //#pragma omp parallel for private(cur_counts,gamma_k) reduction(+:n_wk) reduction(+:nwk_sum)
-
+#pragma omp parallel for
   for (int i = 1; i <= D; i++){
 
     arma::mat cur_gamma = CellMap[i].cell_gamma; //TODO
@@ -184,8 +184,8 @@ void run_epoch(std::unordered_map<int,Cell>& CellMap,const arma::mat& alpha,
 
       //M-Step
       n_dk.row(ndk_id) += (gamma_k * counts) - cur_counts;
-      n_wk.row(gene) += (gamma_k * counts) - cur_counts; // NOTE: this line is moved inside the critical block
-      nwk_sum += (gamma_k * counts) - cur_counts;
+      //n_wk.row(gene) += (gamma_k * counts) - cur_counts; // NOTE: this line is moved inside the critical block
+      //nwk_sum += (gamma_k * counts) - cur_counts;
 
     }
     //  diff = abs(arma::accu(cur_ndk - n_dk.row(ndk_id)));
@@ -246,7 +246,7 @@ void train_gtm(arma::sp_mat& counts,
   for (int i = 0; i < maxiter; i++){
     run_epoch(CellMap,alpha,beta,K,D,n_dk,n_wk,
               num_threads);
-    //build_nwk(n_wk,CellMap,D,K);
+    build_nwk(n_wk,CellMap,D,K);
 
 
 

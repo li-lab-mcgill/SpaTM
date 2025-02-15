@@ -13,6 +13,7 @@ near_match <- function(target, test, tol = 1e-8) {
 test_sce <- SingleCellExperiment(
   assays = list(counts = matrix(rpois(100 * 50, lambda = 80), nrow = 100, ncol = 50))
 )
+counts(test_sce) <- as(counts(test_sce),'dgCMatrix')
 # Test 1: Check that ndk and nwk are no longer zero matrices after training
 test_that("ndk and nwk are updated correctly after training", {
   scte <- SingleCellTopicExperiment(test_sce, K = 5)
@@ -23,7 +24,7 @@ test_that("ndk and nwk are updated correctly after training", {
   expect_false(all(ndk(scte_trained) == 0), info = "ndk should not be a zero matrix")
 
   row_sums_ndk <- rowSums(ndk(scte_trained))
-  colsums_counts <- colSums(counts(scte_trained))
+  colsums_counts <- Matrix::colSums(counts(scte_trained))
   expect_true(near_match(row_sums_ndk,colsums_counts), info = "Row sums of ndk should match row sums of counts matrix")
 
   # Test that nwk is no longer a zero matrix and sums match the total counts
@@ -55,7 +56,7 @@ test_that("inferTopics should only update ndk and theta matrices with correct su
 
 
   row_sums_ndk <- rowSums(ndk(scte_inferred))
-  colsums_counts <- colSums(counts(scte_inferred))
+  colsums_counts <- Matrix::colSums(counts(scte_inferred))
   expect_true(near_match(row_sums_ndk,colsums_counts), info = "Row sums of ndk should match col sums of counts matrix")
 
   scte_inferred <- buildTheta(scte_inferred)

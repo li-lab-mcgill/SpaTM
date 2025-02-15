@@ -173,31 +173,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// get_CE
-double get_CE(arma::mat pred_adj, arma::mat grd_adj);
-RcppExport SEXP _SpaTM_get_CE(SEXP pred_adjSEXP, SEXP grd_adjSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type pred_adj(pred_adjSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type grd_adj(grd_adjSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_CE(pred_adj, grd_adj));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_acc
-double get_acc(arma::mat pred_adj, arma::mat grd_adj, double thresh);
-RcppExport SEXP _SpaTM_get_acc(SEXP pred_adjSEXP, SEXP grd_adjSEXP, SEXP threshSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type pred_adj(pred_adjSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type grd_adj(grd_adjSEXP);
-    Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_acc(pred_adj, grd_adj, thresh));
-    return rcpp_result_gen;
-END_RCPP
-}
 // get_dist_cpp
 NumericMatrix get_dist_cpp(NumericMatrix x);
 RcppExport SEXP _SpaTM_get_dist_cpp(SEXP xSEXP) {
@@ -206,32 +181,6 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
     rcpp_result_gen = Rcpp::wrap(get_dist_cpp(x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rtm_mlp_forward
-arma::rowvec rtm_mlp_forward(const arma::mat& X, int layers, Rcpp::List& weights);
-RcppExport SEXP _SpaTM_rtm_mlp_forward(SEXP XSEXP, SEXP layersSEXP, SEXP weightsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< int >::type layers(layersSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List& >::type weights(weightsSEXP);
-    rcpp_result_gen = Rcpp::wrap(rtm_mlp_forward(X, layers, weights));
-    return rcpp_result_gen;
-END_RCPP
-}
-// mlp_nbr_pred
-arma::mat mlp_nbr_pred(const arma::mat& X, int layers, Rcpp::List weights);
-RcppExport SEXP _SpaTM_mlp_nbr_pred(SEXP XSEXP, SEXP layersSEXP, SEXP weightsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< int >::type layers(layersSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type weights(weightsSEXP);
-    rcpp_result_gen = Rcpp::wrap(mlp_nbr_pred(X, layers, weights));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -377,11 +326,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SpaTM_test_RTM_cellmap", (DL_FUNC) &_SpaTM_test_RTM_cellmap, 12},
     {"_SpaTM_train_RTM", (DL_FUNC) &_SpaTM_train_RTM, 20},
     {"_SpaTM_nbr_pred", (DL_FUNC) &_SpaTM_nbr_pred, 4},
-    {"_SpaTM_get_CE", (DL_FUNC) &_SpaTM_get_CE, 2},
-    {"_SpaTM_get_acc", (DL_FUNC) &_SpaTM_get_acc, 3},
     {"_SpaTM_get_dist_cpp", (DL_FUNC) &_SpaTM_get_dist_cpp, 1},
-    {"_SpaTM_rtm_mlp_forward", (DL_FUNC) &_SpaTM_rtm_mlp_forward, 3},
-    {"_SpaTM_mlp_nbr_pred", (DL_FUNC) &_SpaTM_mlp_nbr_pred, 3},
     {"_SpaTM_test_stm_cell", (DL_FUNC) &_SpaTM_test_stm_cell, 0},
     {"_SpaTM_test_stm_cellmap", (DL_FUNC) &_SpaTM_test_stm_cellmap, 11},
     {"_SpaTM_train_stm", (DL_FUNC) &_SpaTM_train_stm, 17},

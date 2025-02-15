@@ -21,7 +21,7 @@ test_that("SingleCellTopicExperiment constructor initializes correctly", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
   rownames(counts_matrix) <- paste0("Gene", 1:10)
   colnames(counts_matrix) <- paste0("Cell", 1:10)
-
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   sce <- SingleCellExperiment(assays = list(counts = counts_matrix))
 
   # Initialize SingleCellTopicExperiment
@@ -46,15 +46,17 @@ test_that("SingleCellTopicExperiment constructor initializes correctly", {
 
 
 test_that("SingleCellTopicExperiment handles HVG filtering", {
-  counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- matrix(rpois(5000, lambda = 100), nrow = 50, ncol = 100)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   sce <- SingleCellExperiment(assays = list(counts = counts_matrix))
 
-  scte <- SingleCellTopicExperiment(sce, hvg = 5, verbal = FALSE)
+  scte <- SingleCellTopicExperiment(sce,K = 5, hvg = 5, verbal = FALSE)
   expect_true(nrow(scte) <= 5) # Should be reduced to 5 HVGs or less if below threshold
 })
 
 test_that("Guided mode requires labels", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   sce <- SingleCellExperiment(assays = list(counts = counts_matrix))
 
   expect_error(SingleCellTopicExperiment(sce, guided = TRUE),
@@ -63,6 +65,7 @@ test_that("Guided mode requires labels", {
 
 test_that("Guided mode assigns correct priors", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   coldata <- data.frame(Celltype = factor(rep(1:2, each = 5)))
   sce <- SingleCellExperiment(assays = list(counts = counts_matrix), colData = coldata)
 
@@ -73,6 +76,7 @@ test_that("Guided mode assigns correct priors", {
 
 test_that("Default K is set when missing", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   sce <- SingleCellExperiment(assays = list(counts = counts_matrix))
 
   expect_message(SingleCellTopicExperiment(sce), "Setting topics to K = 10")
@@ -80,6 +84,7 @@ test_that("Default K is set when missing", {
 
 test_that("Initialized matrices have correct dimensions", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   sce <- SingleCellExperiment(assays = list(counts = counts_matrix))
   scte <- SingleCellTopicExperiment(sce, K = 5, verbal = FALSE)
 
@@ -93,6 +98,7 @@ test_that("Initialized matrices have correct dimensions", {
 
 test_that("Row and column names are correctly assigned", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   rownames(counts_matrix) <- paste0("Gene", 1:10)
   colnames(counts_matrix) <- paste0("Cell", 1:10)
   sce <- SingleCellExperiment(assays = list(counts = counts_matrix))

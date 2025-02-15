@@ -4,7 +4,7 @@
 \alias{get_nbrs}
 \title{Get neighboring spots based on spatial distance and grouping}
 \usage{
-get_nbrs(spe, samples, cell_ids, group_by = NULL, dist = 1, loss_fun = 0)
+get_nbrs(spe, samples, cell_ids, group_by = NULL, dist = 1, loss_fun = 1)
 }
 \arguments{
 \item{spe}{A `SpatialTopicExperiment` object.}

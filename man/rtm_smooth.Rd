@@ -4,7 +4,7 @@
 \alias{rtm_smooth}
 \title{Smooth labels based on spatial proximity}
 \usage{
-rtm_smooth(spe, labels, nbr_list, k = NULL)
+rtm_smooth(spe, labels = NULL, nbr_list = NULL, k = NULL)
 }
 \arguments{
 \item{spe}{A `SpatialTopicExperiment` object. Note that `spe` must include a `spatialCoords` slot with array coordinates (`array_row`, `array_col`).}

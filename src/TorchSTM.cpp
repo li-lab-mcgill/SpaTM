@@ -1,7 +1,7 @@
 #include "CellMap.h"
 #include "STM.h"
-#include <cstdlib> 
-#include <omp.h> 
+#include <cstdlib>
+#include <omp.h>
 #include <fstream>
 
 using namespace Rcpp;
@@ -27,7 +27,7 @@ void progress_bar(double iter,int maxiter,double elbo, double train_acc,double v
     else { Rcout << " " ;}
   }
   Rcout << "] " << int(prog * 100.0) << "% || Iter: " << iter << " || Train: "<< train_acc << " || Val: "<< val_acc  << " || ELBO: "<< elbo <<" \r";
-  
+
 }
 
 
@@ -39,8 +39,8 @@ arma::mat mlp_forward(const arma::mat& X,
                       int layers,
                       Rcpp::List& weights,
                       bool dummy_topic = false) {
-  
-  
+
+
   arma::mat cur_val = X;
   //Added dummy topic feature
   if (dummy_topic){
@@ -54,14 +54,14 @@ arma::mat mlp_forward(const arma::mat& X,
   while (i < weights.length()){
     weight = Rcpp::as<arma::mat>(weights[i]);
     bias = Rcpp::as<arma::rowvec>(weights[i+1]);
-    
+
     cur_val = cur_val*weight;
     cur_val.each_row() += bias;
     //Rcout << size(cur_val);
     if (layers > 0 && i != layers){cur_val = cur_val % (cur_val > 0);}
     i += 2;
   }
-  
+
   // Calculate output
   // if (cur_val.has_nan()){
   //   Rcout << cur_val << std::endl;
@@ -94,21 +94,21 @@ arma::rowvec get_label_prob(arma::rowvec ndk_row,
                             int label,int layers,
                             Rcpp::List& weights,
                             bool dummy_topic = false){
-  
+
   arma::mat label_prob = arma::zeros<arma::mat>(K,K);
-  
-  
+
+
   ndk_row -= gamma_weight*gene_count; //remove cur value
-  
-  
+
+
   label_prob.each_row() = ndk_row;
-  
+
   label_prob.diag() += gene_count;
-  
-  label_prob.each_col() /= arma::sum(label_prob,0).t(); 
-  
+
+  label_prob.each_col() /= arma::sum(label_prob,0).t();
+
   //////
-  
+
   arma::mat mlp_out = mlp_forward(label_prob,
                                   layers,
                                   weights,
@@ -130,13 +130,13 @@ arma::rowvec get_label_prob(arma::rowvec ndk_row,
   return final_prob;
 }
 
-// 
+//
 // ////////////////////
 // // Epoch train
-// 
+//
 // [[Rcpp::export]]
 double stm_torch_estep(arma::sp_mat& spe_counts,
-                     arma::vec& celltypes, 
+                     arma::vec& celltypes,
                      arma::vec& genes,
                      const arma::mat& alpha,
                      const arma::mat& beta,
@@ -156,7 +156,7 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
   omp_set_num_threads(num_threads);
   int C = arma::accu(spe_counts);
   int M = genes.n_elem;
-  
+
   std::unordered_map<int,STM_Cell> STM_CellMap = build_STM_Cell_Map(spe_counts,
                                                                     celltypes,
                                                                     genes,
@@ -166,7 +166,7 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
                                                                     zero_gamma,
                                                                     rand_gamma,
                                                                     labels);
-  
+
   arma::rowvec beta_sum = arma::sum(beta,0);
   arma::rowvec nwk_sum = arma::sum(n_wk,0);
   #pragma omp parallel for private(weights) shared(STM_CellMap, n_dk, n_wk, beta, beta_sum, nwk_sum)
@@ -177,24 +177,24 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
     arma::rowvec label_post = arma::zeros<arma::rowvec>(K);
     double d_diff = 999;
     int iter = 100;
-    
+
     arma::mat cur_gamma = STM_CellMap[i].cell_gamma; //TODO
     arma::mat m = STM_CellMap[i].cell_mtx; //TODO
-    
+
     while((d_diff > 0.01) & (iter > 0)){ //consider OR statement
       iter--;
-      
+
       int ndk_id = i-1; //To accomodate row indices for matrix
       int tokens = m.n_rows;
       cur_ndk = n_dk.row(ndk_id);
-      
+
       for (int token = 0; token < tokens; token++){
-        
+
         int counts = m(token,0);
         int gene = m(token,2)-1;
-        cur_counts = cur_gamma.row(token)*counts; 
-        
-        
+        cur_counts = cur_gamma.row(token)*counts;
+
+
         label_post = get_label_prob(cur_ndk,cur_gamma.row(token),
                                     counts,K,
                                     STM_CellMap[i].cell_label,
@@ -209,8 +209,8 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
           ((beta.row(gene)+n_wk.row(gene)- cur_counts) /
             (beta_sum+nwk_sum- cur_counts)) %
               label_post;
-        
-        
+
+
         gamma_k = gamma_k/sum(gamma_k);
         //sequential par
         if (arma::any(gamma_k < 0)){
@@ -229,19 +229,19 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
           Rcout << label_post << std::endl;
           stop("Variational Estimates contain NAN");
         }
-        
+
         cur_gamma.row(token) = gamma_k;
-        
+
       }
-      
+
       n_dk.row(ndk_id).zeros();
-      
+
       for (int token = 0; token < tokens; token++){ //TODO vectorise
         n_dk.row(ndk_id) += cur_gamma.row(token)*m(token,0);
       }
-      
+
       d_diff = std::abs(arma::accu(cur_ndk - n_dk.row(ndk_id)));
-      
+
     }
     STM_CellMap[i].cell_gamma = cur_gamma;
   }
@@ -259,6 +259,6 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
                             elbo_mat,
                             iter);
   STM_CellMap.clear();
-  
+
   return elbo;
 }

@@ -11,9 +11,11 @@ RTM(
   loss_fun = 1,
   num_threads = 1,
   maxiter = 100,
+  lr = 1e-05,
   verbal = TRUE,
   zero_gamma = FALSE,
-  rand_gamma = TRUE
+  rand_gamma = TRUE,
+  m_update = T
 )
 }
 \arguments{

@@ -15,6 +15,7 @@ test_that("SpatialTopicExperiment class is correctly defined", {
 test_that("SpatialTopicExperiment constructor initializes correctly", {
   # Create a simple SpatialExperiment object
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   rownames(counts_matrix) <- paste0("Gene", 1:10)
   colnames(counts_matrix) <- paste0("Cell", 1:10)
 
@@ -40,15 +41,17 @@ test_that("SpatialTopicExperiment constructor initializes correctly", {
 })
 
 test_that("SpatialTopicExperiment handles HVG filtering", {
-  counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- matrix(rpois(5000, lambda = 10), nrow = 50, ncol = 100)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   spe <- SpatialExperiment(assays = list(counts = counts_matrix))
 
-  spte <- SpatialTopicExperiment(spe, hvg = 5, verbal = FALSE)
+  spte <- SpatialTopicExperiment(spe, K = 5,hvg = 5, verbal = FALSE)
   expect_true(nrow(spte) <= 5) # Should be reduced to 5 HVGs or less if below threshold
 })
 
 test_that("Guided mode requires labels", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   spe <- SpatialExperiment(assays = list(counts = counts_matrix))
 
   expect_error(SpatialTopicExperiment(spe, guided = TRUE),
@@ -57,6 +60,7 @@ test_that("Guided mode requires labels", {
 
 test_that("Guided mode assigns correct priors", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   coldata <- data.frame(Celltype = factor(rep(1:2, each = 5)))
   spe <- SpatialExperiment(assays = list(counts = counts_matrix), colData = coldata)
 
@@ -67,6 +71,7 @@ test_that("Guided mode assigns correct priors", {
 
 test_that("Default K is set when missing", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   spe <- SpatialExperiment(assays = list(counts = counts_matrix))
 
   expect_message(SpatialTopicExperiment(spe), "Setting topics to K = 10")
@@ -74,6 +79,7 @@ test_that("Default K is set when missing", {
 
 test_that("Initialized matrices have correct dimensions", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   spe <- SpatialExperiment(assays = list(counts = counts_matrix))
   spte <- SpatialTopicExperiment(spe, K = 5, verbal = FALSE)
 
@@ -87,6 +93,7 @@ test_that("Initialized matrices have correct dimensions", {
 
 test_that("Row and column names are correctly assigned", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
   rownames(counts_matrix) <- paste0("Gene", 1:10)
   colnames(counts_matrix) <- paste0("Cell", 1:10)
   spe <- SpatialExperiment(assays = list(counts = counts_matrix))
@@ -102,10 +109,9 @@ test_that("Row and column names are correctly assigned", {
 test_that("Count matrix is converted to Sparse matrix if it is not already", {
   counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
   spe <- SpatialExperiment(assays = list(counts = counts_matrix))
-  expect_message(SpatialTopicExperiment(spe, K = 5),
+  expect_message(spe <- SpatialTopicExperiment(spe, K = 5),
                  regexp = "Converting counts to sparse matrix \\(dgCmatrix\\)",
                  fixed = FALSE)
-  spe <- SpatialTopicExperiment(spe)
   expect_true(is(counts(spe),'dgCMatrix'))
 })
 

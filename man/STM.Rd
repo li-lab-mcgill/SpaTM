@@ -6,6 +6,7 @@
 \usage{
 STM(
   spe,
+  label = NULL,
   num_threads = 1L,
   maxiter = 100L,
   verbal = TRUE,

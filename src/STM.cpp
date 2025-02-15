@@ -137,11 +137,13 @@ arma::rowvec get_label_prob(arma::rowvec ndk_row,
 
   if (label_prob.has_nan()){
     Rcout << "Label Prob Fun : \n"<< label_prob << std::endl;
+    stop("label probs contain NAN");
   }
 
   arma::mat model_out = label_prob * model_weights; // K x L
   if (model_out.has_nan()){
     Rcout << "Model out Fun : \n"<< model_out << std::endl;
+    stop("model out contains NAN");
   }
   arma::rowvec final_prob = arma::zeros<arma::rowvec>(K); // K x 1 (rowvec)
   for (int i = 0; i < K; i++){
@@ -151,19 +153,23 @@ arma::rowvec get_label_prob(arma::rowvec ndk_row,
 
     if (softmax_val.has_nan()){
       Rcout << "softmax val 1 : \n"<< softmax_val << std::endl;
+      stop("softmax contains NAN");
     }
     if (softmax_val.has_inf()){
       Rcout << "Inf softmax val 1 : \n"<< softmax_val << std::endl;
+      stop("Infinite softmax val");
     }
     final_prob(i) = softmax_val(label)/arma::sum(softmax_val); // only get val for label of interest
 
     if (final_prob.has_nan()){
       Rcout << "final Prob Fun Partial : \n"<< final_prob << std::endl;
+      stop("Intermediate probability contains NAN");
     }
   }
   final_prob /= arma::sum(final_prob); // normalize across topic assignments //1 x K
   if (final_prob.has_nan()){
     Rcout << "final Prob Fun full : \n"<< final_prob << std::endl;
+    stop("Final probability contains NAN");
   }
   // get weights
   return final_prob;
@@ -229,6 +235,7 @@ void run_stm_epoch(std::unordered_map<int,STM_Cell>& STM_CellMap,
         Rcout << "Cell: " << i  << std::endl;
         Rcout << "token : " << token << std::endl;
         Rcout << "current gamma: " << gamma_k << std::endl;
+        stop("Variational Estimates contain NAN");
       }
 
       cur_gamma.row(token) = gamma_k; //TODO
@@ -244,12 +251,14 @@ void run_stm_epoch(std::unordered_map<int,STM_Cell>& STM_CellMap,
         Rcout << "Cell: " << i  << std::endl;
         Rcout << "token : " << token << std::endl;
         Rcout << "NWK: " << n_wk.row(gene) << std::endl;
+        stop("NWK Estimates contain NAN");
       }
 
       if (n_dk.has_nan()){
         Rcout << "Cell: " << i  << std::endl;
         Rcout << "token : " << token << std::endl;
         Rcout << "NDK: " << n_dk.row(ndk_id) << std::endl;
+        stop("NDK Estimates contain NAN");
       }
 
     }
@@ -388,7 +397,10 @@ arma::mat train_stm(arma::sp_mat& counts,
                                                                     rand_gamma,
                                                                     labels);
   double ce_loss = 0;
-  //Rcout << "STM_CellMap is built" << std::endl;
+  if (verbal){
+
+  Rcout << "STM_CellMap is built" << std::endl;
+  }
 
   //Complete // Consider making the unordered_map its own object
   build_nwk_stm(n_wk,STM_CellMap,D,K);
@@ -477,13 +489,14 @@ arma::mat train_stm(arma::sp_mat& counts,
   }
 
 
-  Rcout.flush();
-  Rcout << "[";
-  for(int p = 0; p < prog_width; p++){
-    Rcout << "=" ;
+  if (verbal){
+    Rcout.flush();
+    Rcout << "[";
+    for(int p = 0; p < prog_width; p++){
+      Rcout << "=" ;
+    }
+    Rcout << "] " << "100% || Iter: " << maxiter << " || CE: "<< ce_loss << " || ELBO: "<< cur_elbo << std::endl;
+    Rcout << "Max Iteration Reached" << std::endl;
   }
-  Rcout << "] " << "100% || Iter: " << maxiter << " || CE: "<< ce_loss << " || ELBO: "<< cur_elbo << std::endl;
-  Rcout << "Max Iteration Reached" << std::endl;
-  elbo_val.save("elbo_out.csv",arma::csv_ascii);
   return model_weights;
 }

@@ -1,7 +1,7 @@
 #include "CellMap.h"
 #include "RTM.h"
-#include <cstdlib> 
-#include <omp.h> 
+#include <cstdlib>
+#include <omp.h>
 #include <fstream>
 
 using namespace Rcpp;
@@ -107,7 +107,7 @@ void test_RTM_cell(){
 
 // build RTM Cell Map
 std::unordered_map<int,RTM_Cell> build_RTM_Cell_Map(arma::sp_mat& counts,
-                                                    arma::vec& celltypes, 
+                                                    arma::vec& celltypes,
                                                     arma::vec& genes,
                                                     const arma::mat& alpha,
                                                     const arma::mat& beta,
@@ -174,18 +174,18 @@ std::unordered_map<int,RTM_Cell> build_RTM_Cell_Map(arma::sp_mat& counts,
                                     rand_gamma);
       }
     }
-    
-   
+
+
    // Rcout << "After function: " << i+1 << std::endl;
   }
   //Rcout << "Complete" << std::endl;
   return RTM_CellMap;
-} 
+}
 
 // Test RTM Cell Map
 // [[Rcpp::export]]
 void test_RTM_cellmap(arma::sp_mat& counts,
-                      arma::vec& celltypes, 
+                      arma::vec& celltypes,
                       arma::vec& genes,
                       const arma::mat& alpha,
                       const arma::mat& beta,
@@ -226,7 +226,7 @@ arma::rowvec get_nbr_prob(arma::rowvec ndk_row,
   arma::rowvec cur_ndk = arma::zeros<arma::rowvec>(K);
   arma::rowvec final_prob = arma::zeros<arma::rowvec>(K); // K x 1 (rowvec)
   arma::rowvec nbr_prob = arma::zeros<arma::rowvec>(K);
-  
+
   //Rcout << nbr_dist << std::endl;
   //Rcout << nbr_bool << std::endl;
   //Rcout << nbr_ndk << std::endl;
@@ -262,8 +262,8 @@ arma::rowvec get_nbr_prob(arma::rowvec ndk_row,
         //Rcout << "B2.2" << std::endl;
         //Rcout <<  nbr_prob(j) << std::endl;
         //Rcout << "B2.3" << std::endl;
-        nbr_prob(j) = ((model_weights(j) * (*nbr_dist)(i))/ sum_ndk) 
-          - (1.0 / (2.0 * sum_ndk * sum_ndk)) * 
+        nbr_prob(j) = ((model_weights(j) * (*nbr_dist)(i))/ sum_ndk)
+          - (1.0 / (2.0 * sum_ndk * sum_ndk)) *
             (2.0 * model_weights(j) * nbr_prob(j) + nbr_prob(j) * nbr_prob(j));
         //Rcout << "B3" << std::endl;
      }
@@ -276,17 +276,17 @@ arma::rowvec get_nbr_prob(arma::rowvec ndk_row,
       //final_prob += nbr_bool.at(i)*nbr_prob +(1-nbr_bool.at(i))*(1-nbr_prob);
     }
     else {
-      
+
       //Rcout << nbr_bool << std::endl;
       //Rcout << i << std::endl;
       final_prob += nbr_prob;
-    } 
+    }
 
   }
   //Rcout << "label loop end" << std::endl;
   final_prob = arma::exp(final_prob);
   final_prob /= arma::sum(final_prob);
-  
+
   return final_prob;
 }
 
@@ -306,20 +306,20 @@ void update_weights(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
    arma::rowvec nbr_sums = arma::zeros<arma::rowvec>(K);
    for (int j = 0; j < D; j++){
      arma::uvec nbr_ids = RTM_CellMap[j+1].cell_nbrs;
-     
-     
+
+
      arma::mat sub_mat = ndk_norm.rows(nbr_ids);
-     
+
      nbr_sums += arma::sum(sub_mat.each_row() %
        ndk_norm.row(j) ,0);
-     
+
    }
-   
-   model_bias = (std::log(num_links -arma::accu(nbr_sums)) - 
+
+   model_bias = (std::log(num_links -arma::accu(nbr_sums)) -
      std::log(rho*((K-1.0)/K) + num_links -arma::accu(nbr_sums)));
-   
-   model_weights = arma::log(nbr_sums.t()) - 
-     arma::log(nbr_sums.t() + rho/(K*K)) - 
+
+   model_weights = arma::log(nbr_sums.t()) -
+     arma::log(nbr_sums.t() + rho/(K*K)) -
      model_bias;
  } else if (loss_fun == 1) {
    //Logistic Regression update for bias and weights
@@ -352,7 +352,7 @@ void update_weights(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
        //Rcout << "here 5" << std::endl;
        bias_grad += arma::sum(nbr_bool.t() - model_output);
        //Rcout << "here 6" << std::endl;
-       
+
      }
      model_bias -= lr*bias_grad/num_links;
      model_weights -= lr*weight_grad/num_links;
@@ -366,27 +366,27 @@ void update_weights(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
      // Reset gradients at the start of each iteration
      weight_grad.zeros();
      bias_grad = 0.0;
-     
+
      for (int j = 0; j < D; j++) {
        arma::uvec nbr_ids = RTM_CellMap[j+1].cell_nbrs;
        arma::vec nbr_dist = RTM_CellMap[j+1].nbr_dist;
        if (nbr_ids.n_elem == 0) {
          continue; // Skip if no neighbors
        }
-       
+
        // Compute the sub-matrix and model output
        arma::mat sub_mat = ndk_norm.rows(nbr_ids);
        sub_mat = sub_mat.each_row() % ndk_norm.row(j);
        arma::rowvec model_output = (sub_mat * model_weights).t() + model_bias;
-       
+
        // Calculate prediction error
        arma::vec error = model_output.t() - nbr_dist;
-       
+
        // Compute gradients
        weight_grad += sub_mat.t() * error; // Gradient w.r.t. weights
        bias_grad += arma::sum(error);     // Gradient w.r.t. bias
      }
-     
+
      // Apply gradient updates
      model_weights -= lr * weight_grad / num_links; // Normalize by D
      model_bias -= lr * bias_grad / num_links;      // Normalize by D
@@ -399,12 +399,12 @@ void update_weights(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
 void run_RTM_epoch(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
                    arma::vec& model_weights,
                    int model_bias,
-                   const arma::mat& alpha, 
+                   const arma::mat& alpha,
                    const arma::mat& beta,int K,int D,arma::mat& n_dk,arma::mat& n_wk,
                    int num_threads = 1,
                    int loss_fun = 0){
   omp_set_num_threads(num_threads);
-  
+
   //Rcout << "here 4" << std::endl;
   arma::rowvec beta_sum = arma::sum(beta,0);
   arma::rowvec nwk_sum = arma::sum(n_wk,0);
@@ -416,28 +416,28 @@ void run_RTM_epoch(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
 #pragma omp parallel for private(label_post,cur_ndk,gamma_k,cur_counts,gene,counts,ndk_id)
   for (int i = 1; i <= D; i++){
     //Rcout << "here 5" << std::endl;
-    arma::mat cur_gamma = RTM_CellMap[i].cell_gamma; 
-    arma::mat m = RTM_CellMap[i].cell_mtx; 
+    arma::mat cur_gamma = RTM_CellMap[i].cell_gamma;
+    arma::mat m = RTM_CellMap[i].cell_mtx;
     arma::uvec nbr_ids = RTM_CellMap[i].cell_nbrs;
     arma::mat nbr_ndk = n_dk.rows(nbr_ids);
     arma::vec nbr_bool = RTM_CellMap[i].bool_nbrs;
 
-    //normalize each row 
+    //normalize each row
     nbr_ndk.each_col() /= arma::sum(nbr_ndk,1);
-    
+
     ndk_id = i-1; //To accommodate row indices for matrix
     int tokens = m.n_rows;
     cur_ndk = n_dk.row(ndk_id);
-    
 
-    
+
+
     for (int token = 0; token < tokens; token++){
-      
-      
+
+
       counts = m(token,0);
       gene = m(token,2)-1;
       cur_counts = cur_gamma.row(token)*counts; //TODO
-      
+
       if (nbr_ids.n_elem == 0){
         label_post = arma::ones<arma::rowvec>(K);
         label_post /= arma::sum(label_post);
@@ -449,7 +449,7 @@ void run_RTM_epoch(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
         //Rcout << nbr_bool << std::endl;
         //Rcout << "here B" << std::endl;
         //Rcout << nbr_dist << std::endl;
-        
+
         if (loss_fun == 2){
           label_post = get_nbr_prob(cur_ndk,cur_gamma.row(token),
                                     model_weights,model_bias,
@@ -462,9 +462,9 @@ void run_RTM_epoch(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
         //Rcout << "here C" << std::endl;
         //Rcout << "End label prob" << std::endl;
       }
-      
+
       //Rcout << "here 6" << std::endl;
-      gamma_k = (alpha.row(ndk_id) + n_dk.row(ndk_id) - cur_counts) % 
+      gamma_k = (alpha.row(ndk_id) + n_dk.row(ndk_id) - cur_counts) %
         ((beta.row(gene)+n_wk.row(gene)- cur_counts) /
           (beta_sum+nwk_sum- cur_counts)) %
             label_post;
@@ -473,13 +473,13 @@ void run_RTM_epoch(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
       if (token < 0){
         Rcout << "label post \n" << label_post << std::endl;
         Rcout << "gamma_k \n" << gamma_k << std::endl;
-        Rcout << "orig ggamma \n" << ((alpha.row(ndk_id) + n_dk.row(ndk_id) - cur_counts) % 
+        Rcout << "orig ggamma \n" << ((alpha.row(ndk_id) + n_dk.row(ndk_id) - cur_counts) %
           ((beta.row(gene)+n_wk.row(gene)- cur_counts) /
-            (beta_sum+nwk_sum- cur_counts))) / arma::accu(((alpha.row(ndk_id) + n_dk.row(ndk_id) - cur_counts) % 
+            (beta_sum+nwk_sum- cur_counts))) / arma::accu(((alpha.row(ndk_id) + n_dk.row(ndk_id) - cur_counts) %
               ((beta.row(gene)+n_wk.row(gene)- cur_counts) /
                 (beta_sum+nwk_sum- cur_counts)))) << std::endl;
       }
-      
+
       gamma_k = gamma_k/sum(gamma_k);
       //sequential par
       if (arma::any(gamma_k < 0)){
@@ -488,16 +488,16 @@ void run_RTM_epoch(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
             (beta_sum+nwk_sum) %
               label_post;
       }
-      
+
       if (gamma_k.has_nan()){
         Rcout << "Cell: " << i  << std::endl;
         Rcout << "token : " << token << std::endl;
         Rcout << "current gamma: " << gamma_k << std::endl;
         stop("Variational Estimates contain NAN");
       }
-      
-      cur_gamma.row(token) = gamma_k; 
-      
+
+      cur_gamma.row(token) = gamma_k;
+
 
       if (n_wk.has_nan()){
         Rcout << "Cell: " << i  << std::endl;
@@ -505,22 +505,22 @@ void run_RTM_epoch(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
         Rcout << "NWK: " << n_wk.row(gene) << std::endl;
         stop("NWK matrix contains NAN");
       }
-      
+
       if (n_dk.has_nan()){
         Rcout << "Cell: " << i  << std::endl;
         Rcout << "token : " << token << std::endl;
         Rcout << "NDK: " << n_dk.row(ndk_id) << std::endl;
         stop("NDK matrix contains NAN");
       }
-      
+
     }
-    RTM_CellMap[i].cell_gamma = cur_gamma; 
-    
-    
+    RTM_CellMap[i].cell_gamma = cur_gamma;
+
+
   }
-  
-  
-  
+
+
+
 }
 
 // Suff Stat Helpers
@@ -537,7 +537,7 @@ void build_nwk_RTM(arma::mat& n_wk,
       n_wk.row(gene) += RTM_CellMap[j].cell_gamma.row(i) * RTM_CellMap[j].cell_mtx(i,0);
     }
   }
-  
+
 }
 
 void build_ndk_RTM(arma::mat& n_dk,
@@ -585,29 +585,29 @@ double get_RTM_ELBO(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
       ELBO_theta += (lgamma(alpha(i,j) + n_dk(i,j))) - theta_denom;
     }
   }
-  
+
 
   // ELBO phi
   ELBO_phi_prior += (lgamma(arma::accu(beta)) - arma::accu(lgamma(beta)));
-  
+
   for (int j = 0; j < M; j++){
     ELBO_phi_like += arma::accu(lgamma(beta.row(j) + n_wk.row(j)));
   }
   for (int j = 0; j < M; j++){
     //for (int i = 0; i < K; i++){
       ELBO_phi_norm += lgamma(arma::sum(beta.row(j)) + arma::sum(n_wk.row(j)));
-    //} 
+    //}
   }
-  
+
   ELBO_phi = (K*ELBO_phi_prior + ELBO_phi_like - ELBO_phi_norm);
-  
+
   // ELBO gamma
   for (int cell = 1; cell <= D; cell++){
     tokens = RTM_CellMap[cell].cell_mtx.n_rows;
     for (int token = 0; token < tokens; token++){
       ELBO_gamma += arma::sum(RTM_CellMap[cell].cell_gamma.row(token) %
         arma::log(RTM_CellMap[cell].cell_gamma.row(token) + 0.0000001)*RTM_CellMap[cell].cell_mtx(token,0));
-    } 
+    }
   }
   //Rcout << ELBO_theta/C << ELBO_phi/C << ELBO_gamma/C << std::endl;
   arma::rowvec cur_val = {ELBO_theta/C,ELBO_phi/C,ELBO_gamma/C, (ELBO_theta + ELBO_phi -ELBO_gamma)/C};
@@ -624,7 +624,7 @@ double get_RTM_ELBO(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
 // int loss_fun 0,1,2 - exp_mean,cross_ent, softmax cross_ent
 // [[Rcpp::export]]
 arma::vec train_RTM(arma::sp_mat& counts,
-                          arma::vec& celltypes, 
+                          arma::vec& celltypes,
                           arma::vec& genes,
                           Rcpp::List& nbr_list,
                           const arma::mat& alpha, const arma::mat& beta,
@@ -647,8 +647,10 @@ arma::vec train_RTM(arma::sp_mat& counts,
   int prog_width = 50;
   int pos = 0;
   arma::mat ndk_norm = arma::zeros<arma::mat>(D,K);
-  Rcout << "Building RTM_CellMap" << std::endl;
-  
+ if (verbal){
+   Rcout << "Building RTM_CellMap" << std::endl;
+ }
+
   std::unordered_map<int,RTM_Cell> RTM_CellMap = build_RTM_Cell_Map(counts,
                                                                celltypes,
                                                                genes,
@@ -659,7 +661,9 @@ arma::vec train_RTM(arma::sp_mat& counts,
                                                                rand_gamma,
                                                                nbr_list,
                                                                loss_fun);
-  Rcout << "RTM_CellMap is built" << std::endl;
+  if (verbal){
+    Rcout << "RTM_CellMap is built" << std::endl;
+  }
 
   //Complete // Consider making the unordered_map its own object
   build_nwk_RTM(n_wk,RTM_CellMap,D,K);
@@ -681,7 +685,7 @@ arma::vec train_RTM(arma::sp_mat& counts,
   for (int i = 0; i < maxiter; i++){
     //E-Step
     //Rcout << "Start E-step" << std::endl;
-    
+
     run_RTM_epoch(RTM_CellMap,
                   model_weights,
                   model_bias,
@@ -713,7 +717,7 @@ arma::vec train_RTM(arma::sp_mat& counts,
     /////////
     //TODO ENDS here
     //Rcout << model_weights << std::endl;
-    //Rcout << "ELBO Start" << std::endl;  
+    //Rcout << "ELBO Start" << std::endl;
     cur_elbo = get_RTM_ELBO(RTM_CellMap,
                         alpha,
                         beta,
@@ -723,7 +727,7 @@ arma::vec train_RTM(arma::sp_mat& counts,
                         C,
                         elbo_val,
                         i);//(i+1);
-    
+
     //Rcout << "ELBO Mid" << std::endl;
     //Add RTM ELBO Term -TODO As well
     double rtm_elbo = 0.0;
@@ -745,13 +749,13 @@ arma::vec train_RTM(arma::sp_mat& counts,
     } else{
       // use the nbr_pred function to make this faster
       //create an adjacency matrix based on inputs
-      
+
       for (int j = 0; j < D; j++){
         arma::uvec nbr_ids = RTM_CellMap[j+1].cell_nbrs;
         if (nbr_ids.n_elem == 0){
           continue;
         }
- 
+
         arma::mat sub_mat = ndk_norm.rows(nbr_ids);
         arma::vec cur_out = sub_mat*model_weights + model_bias;
         if (loss_fun == 1){
@@ -764,7 +768,7 @@ arma::vec train_RTM(arma::sp_mat& counts,
           rtm_elbo += arma::accu(arma::log1p(pdf_values));                 // Sum log1p results
         }
       }
-    } 
+    }
     rtm_elbo /= (2*num_links);
     elbo_val(i,4) = rtm_elbo;
     //Rcout << "ELBO End" << std::endl;
@@ -772,7 +776,7 @@ arma::vec train_RTM(arma::sp_mat& counts,
     //Rcout << "ELBO Done" << std::endl;
     old_elbo = cur_elbo;
     //TODO ENDS here
-    
+
     if (verbal){
       Rcout.flush();
 
@@ -785,19 +789,21 @@ arma::vec train_RTM(arma::sp_mat& counts,
       }
       Rcout << "] " << int(prog * 100.0) << "% || Iter: " << i << " || ELBO: "<< cur_elbo <<" \r";
     }
-    
+
   }
-  
-  
-  Rcout.flush();
-  Rcout << "[";
-  for(int p = 0; p < prog_width; p++){
-    Rcout << "=" ;
+
+
+  if (verbal){
+    Rcout.flush();
+    Rcout << "[";
+    for(int p = 0; p < prog_width; p++){
+      Rcout << "=" ;
+    }
+    Rcout << "] " << "100% || Iter: " << maxiter <<  " || ELBO: "<< cur_elbo << std::endl;
+    Rcout << "Max Iteration Reached" << std::endl;
   }
-  Rcout << "] " << "100% || Iter: " << maxiter <<  " || ELBO: "<< cur_elbo << std::endl;
-  Rcout << "Max Iteration Reached" << std::endl;
   //elbo_val.save("elbo_out.csv",arma::csv_ascii);
-  Rcout << model_bias << std::endl;
+  //Rcout << model_bias << std::endl;
   //Rcout << model_weights << std::endl;
   //Combine model_bias and model_weights
   arma::vec model_weights_out = arma::zeros<arma::vec>(K+1);
@@ -836,37 +842,6 @@ arma::mat nbr_pred(arma::mat theta,arma::rowvec weights,double max_val = 1,int l
 
 
 // [[Rcpp::export]]
-double get_CE(arma::mat pred_adj, arma::mat grd_adj){
-  pred_adj = arma::log(pred_adj);
-  pred_adj = pred_adj % grd_adj;
-  double CE = arma::accu(pred_adj);
-    return -CE;
-}
-
-
-
-// [[Rcpp::export]]
-double get_acc(arma::mat pred_adj, arma::mat grd_adj,double thresh = 0.5){
-  int hits = 0;
-  double acc;
-  //get upper triangle indices of grd_adj
-  arma::uvec idx = arma::trimatu_ind(size(grd_adj));
-  //check hits
-  for (int i = 0; i < idx.n_elem; i++){
-    if (grd_adj(idx(i)) >= thresh && pred_adj(idx(i)) == 1){
-      hits++;
-    }
-    else if (grd_adj(idx(i)) < thresh && pred_adj(idx(i)) == 0){
-      hits++;
-    }
-  }
-  
-  acc = hits/(double)idx.n_elem;
-  
-  return acc;
-}
-
-// [[Rcpp::export]]
 NumericMatrix get_dist_cpp(NumericMatrix x) {
   int n = x.nrow();
   NumericMatrix out(n,n);
@@ -877,70 +852,3 @@ NumericMatrix get_dist_cpp(NumericMatrix x) {
   }
   return out;
 }
-
-
-
-//Torch Tweaks
-// [[Rcpp::export]]
-arma::rowvec rtm_mlp_forward(const arma::mat& X,
-                      int layers,
-                      Rcpp::List& weights) {
-  arma::mat cur_val = X;
-  int i  = 0;
-  // Calculate hidden layer output using ReLU activation
-  arma::mat weight;
-  arma::rowvec bias;
-  while (i < weights.length()){
-    weight = Rcpp::as<arma::mat>(weights[i]);
-    bias = Rcpp::as<arma::rowvec>(weights[i+1]);
-    
-    cur_val = cur_val*weight;
-    cur_val.each_row() += bias;
-    //Rcout << size(cur_val);
-    if (layers > 0 && i != layers){cur_val = cur_val % (cur_val > 0);}
-    i += 2;
-  }
-  
-  // Calculate output
-  arma::rowvec output = arma::exp(-cur_val);
-  output = 1/(1+output);
-  return output;
-}
-
-arma::rowvec mlp_nbr_prob(){
-  return arma::zeros<arma::rowvec>(1);
-}
-// [[Rcpp::export]]
-arma::mat mlp_nbr_pred(const arma::mat& X,
-                       int layers,
-                       Rcpp::List weights) {
-  
-  arma::mat output = arma::zeros<arma::mat>(X.n_rows,X.n_rows);
-  //Rcout << "here 1" << std::endl;
-  for (int cell = 0 ; cell < X.n_rows; cell++){
-    //Rcout << "here 2" << std::endl;
-    for (int nbr = 0; nbr < X.n_rows; nbr++){
-      arma::rowvec cur_val = X.row(cell) % X.row(nbr);
-      //Rcout << "here 3" << std::endl;
-      int i  = 0;
-      arma::mat weight;
-      arma::rowvec bias;
-      while (i < weights.length()){
-        //Rcout << "here 4" << std::endl;
-          weight = Rcpp::as<arma::mat>(weights[i]);
-          bias = Rcpp::as<arma::rowvec>(weights[i+1]);
-          //Rcout << "here 5" << std::endl;
-          cur_val = cur_val*weight +bias;
-          
-          if (layers > 0 && i != layers){cur_val = cur_val % (cur_val > 0);}
-          i += 2;
-      }
-      output(cell,nbr) = cur_val[0];
-      //Rcout << "here 6" << std::endl;
-    }
-  }
-
-  output = 1/(1 + arma::exp(-output));
-  return output;
-}
-

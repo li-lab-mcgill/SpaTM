@@ -1,6 +1,4 @@
-library(spatialLIBD)
-library(tidyverse)
-library(Matrix)
+
 
 #' Get neighboring spots based on spatial distance and grouping
 #'
@@ -31,8 +29,9 @@ library(Matrix)
 #' # Example 3: Using a loss function to sample negative neighbors
 #' nbr_list <- get_nbrs(spe = spe_object, samples = "sample_id", cell_ids = "cell_id", loss_fun = 1)
 #'
+#' @import SpatialExperiment
 #' @export
-get_nbrs <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 0){
+get_nbrs <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 1){
   coldata <- colnames(colData(spe))
   if (!all(c('array_row','array_col') %in% coldata)){
     stop('Error: array_row and array_col not found in spe metadata.This function assumes that spatial array coordinates are stored under these two names.')
@@ -42,18 +41,18 @@ get_nbrs <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 0)
 
   if (!is.null(group_by)){
     for (i in colData(spe)[,cell_ids]){
-      cur_nbrs <- matrix(0,nrow = 0,ncol = 2)
+
       cur_sample <- colData(spe)[i,samples]
       cur_group <- colData(spe)[i,group_by]
-      candid_nbrs <- which(colData(spe)[,samples] == cur_sample & colData(spe)[,group_by] == cur_group) - 1
+      nbrs <- which(colData(spe)[,samples] == cur_sample & colData(spe)[,group_by] == cur_group) - 1
       #Remove current example
-      cur_nbrs[cur_nbrs != (i-1)]
+      nbrs <- nbrs[nbrs != (i-1)]
       n_sam <- 50
-      if (length(cur_nbrs) > n_sam){
-        cur_nbrs <- sample(cur_nbrs,n_sam,prob = exp(-dist_mat[i,cur_nbrs])/sum(exp(-dist_mat[i,cur_nbrs])))
+      if (length(nbrs) > n_sam){
+        nbrs <- sample(nbrs,n_sam,prob = exp(-dist_mat[i,nbrs+1])/sum(exp(-dist_mat[i,nbrs+1])))
       }
-      nbr_list[[i]] <- rbind(cur_nbrs,rep(1,length(cur_nbrs)))
-      n  <- length(cur_nbrs)
+      nbr_list[[i]] <- cbind(nbrs,rep(1,length(nbrs)))
+      n <- length(nbrs)
      if (loss_fun == 1 & n > 0){
        nbr_list[[i]] <- rbind(nbr_list[[i]],
                               cbind(sample((1:ncol(spe))[-i],
@@ -95,7 +94,9 @@ get_nbrs <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 0)
       }
     }
   }
-
+  if (do.call('sum',lapply(nbr_list,nrow)) == 0){
+    message('Warning. Your current parametrization returned 0 neighbors for all samples. Consider a different distance threshold or grouping by a covariate.')
+  }
   return(nbr_list)
 }
 

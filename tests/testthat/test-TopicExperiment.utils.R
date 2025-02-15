@@ -10,6 +10,9 @@ test_sce <- SingleCellExperiment(
   assays = list(counts = matrix(rpois(100 * 50, lambda = 10), nrow = 100, ncol = 50))
 )
 
+counts(test_sce) <- as(counts(test_sce),'dgCMatrix')
+counts(test_spe) <- as(counts(test_spe),'dgCMatrix')
+
 # Unit tests for TopicExperiment
 
 test_that("TopicExperiments initialize correctly", {

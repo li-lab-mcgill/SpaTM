@@ -2,7 +2,7 @@ Package: SpaTM
 Type: Package
 Title: Topic Modelling for Inferring Spatially Informed Transcriptional Programs
 Version: 0.2
-Date: 2025-02-06
+Date: 2025-02-14
 Author: Adrien Osakwe
 Maintainer: Adrien Osakwe <adrien.osakwe@mail.mcgill.ca>
 Description: Topic Modelling framework for Spatial, Bulk, and Single cell analyses.
@@ -12,17 +12,20 @@ Imports: Rcpp (>= 1.0.10),
          SpatialExperiment,
          scran,
          scater,
-         tidyverse,
+         dplyr,
          Matrix,
          spatialLIBD,
-         DescTools,
          RcppArmadillo,
          bluster,
          methods,
          scuttle,
          torch
-Suggests:testthat
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 7.3.2
 Encoding: UTF-8
-
+Config/testthat/edition: 3
+VignetteBuilder: knitr

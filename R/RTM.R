@@ -6,7 +6,7 @@ library(spatialLIBD)
 library(DescTools)
 library(cluster)
 
-
+# TODO re-assess which helper functions should be contained in package as opposed to analysis repo
 
 #### Training ####
 #' Train a Relational Topic Model (RTM)
@@ -39,9 +39,20 @@ RTM <- function(scte,
                 loss_fun = 1,
                 num_threads = 1,
                 maxiter = 100,
+                lr = 1e-5,
                 verbal = TRUE,
                 zero_gamma = FALSE,
-                rand_gamma = TRUE){
+                rand_gamma = TRUE,
+                m_update = T){
+
+  #Check if nbr_list is populated
+  if (do.call('sum',lapply(nbr_list,nrow)) == 0){
+    stop("Your current TopicExperiment does not have any neighbors detected.\nRe-run the get_nbrs function with a different neighbor criteria threshold to ensure positive examples are included.")
+  }
+
+  if (!is(scte,'TopicExperiment')){
+    stop('This function requires a TopicExperiment object to run correctly. Please create a Spatial or SingleCell variant before using the RTM function.')
+  }
   metadata(scte)[['RTM_weights']] <- train_RTM(counts(scte),
                                                scte$int_cell,
                                                rowData(scte)$gene_ints,
@@ -54,14 +65,14 @@ RTM <- function(scte,
                                                nwk(scte),
                                                num_threads = num_threads,
                                                maxiter = maxiter,
-                                               verbal = TRUE,
-                                               zero_gamma = FALSE,
-                                               rand_gamma = TRUE,
+                                               verbal = verbal,
+                                               zero_gamma = zero_gamma,
+                                               rand_gamma = rand_gamma,
                                                thresh = 0.00001,
                                                lr =lr,
                                                rho = 50000,
                                                loss_fun = loss_fun,
-                                               m_update = TRUE)
+                                               m_update = m_update)
   return(scte)
 }
 
@@ -71,6 +82,7 @@ RTM <- function(scte,
 
 
 
+# TODO this assumes only one sample is present in the object. Need to tweak it to return a list of adjacency matrices
 ###predict full adjacency matrix
 #' Get All Predictions from Relational Topic Model (RTM)
 #'
@@ -90,87 +102,15 @@ RTM <- function(scte,
 #' @export
 get_all_pred <- function(spe,loss_fun){
 
-  return(nbr_pred(theta(spe),metadata(scte)[['RTM_weights']],1,loss_fun))
-}
-
-
-## Build ROC Curve
-#' @export
-build_ROC <- function(all_pred,grd_adj,nbr_list,full_adj = FALSE,
-                      titles = "Def. Title"){
-  roc_list <- list()
-  pred_adj <- all_pred
-  model_name <- titles
-  perf_df <- matrix(0,nrow = 0,ncol = 5)
-  for (thresh in seq(0,1,length.out = 250)){
-    tn <- 0
-    tp <- 0
-    fn <- 0
-    fp <- 0
-    if (full_adj){
-      pred_adj[pred_adj > thresh] <- 1
-      pred_adj[pred_adj <= thresh] <- 0
-
-      tp <- length(which((pred_adj + grd_adj) == 2))
-      tn <- length(which((pred_adj + grd_adj) == 0))
-      fp <- length(which((pred_adj - grd_adj) == 1))
-      fn <- length(which((pred_adj - grd_adj) == -1))
-    }
-    else {
-      for (cell in 1:ncol(pred_adj)){
-        if (nrow(nbr_list[[cell]]) == 0){
-          next
-        }
-        grd_adj <- nbr_list[[cell]][,2]
-        nbr_ids <- nbr_list[[cell]][,1]+1
-        sub_adj <-  pred_adj[cell,nbr_ids]
-        sub_adj[sub_adj > thresh] <- 1
-        sub_adj[sub_adj <= thresh] <- 0
-
-        tp <- tp + length(which((sub_adj + grd_adj) == 2))
-        tn <- tn + length(which((sub_adj + grd_adj) == 0))
-        fp <- fp + length(which((sub_adj - grd_adj) == 1))
-        fn <- fn + length(which((sub_adj - grd_adj) == -1))
-
-        if (sum(c(tp,tn,fp,fn)) == 0){stop('Error with TP/TN/FP/FN Calculation!')}
-      }
-
-
-    }
-
-
-
-    tpr <- tp/(tp+fn)
-    fpr <- fp/(fp+tn)
-    sens <- tp/(tp+fn) #recall
-    precis <- tp/(tp+fp)
-    perf_df <-rbind(perf_df,c(tpr,fpr,sens,precis,thresh))
-  }
-  roc_list[[model_name]] <- perf_df[,1:4]
-  #print(DescTools::AUC(perf_df[,2],perf_df[,1]))
-
-
-  return(roc_list)
+  return(nbr_pred(theta(spe),metadata(spe)[['RTM_weights']],1,loss_fun))
 }
 
 
 
 
-#' @export
-plot_clusters <- function(spe,anno_label = '',test_sample = '',pred_list,clusters = 7,
-                          model_name = 'Default Name'){
-  #Run kmeans
-  temp <- kmeans(pred_list,clusters)
-  #store in spe
-  spe$clust <- temp$cluster
-  cur_ari <- aricode::ARI(spe$clust,colData(spe)[,anno_label])
-  print(paste("ARI: ",round(cur_ari,3)))
-  ari_plot <- vis_clus(spe,
-                       clustervar = "clust",
-                       sampleid = test_sample) +
-    labs(subtitle = paste(model_name," ARI: ",round(cur_ari,3),sep = ''))
-  return(ari_plot)
-}
+
+
+
 
 #' @export
 rtm_cluster <- function(spe,adj_mat,method = 'Kmeans',clusters = 10){
@@ -209,17 +149,20 @@ rtm_cluster <- function(spe,adj_mat,method = 'Kmeans',clusters = 10){
 #' new_labels <- rtm_smooth(spe = spe_object, labels = initial_labels, nbr_list = precomputed_nbr_list, k = NULL)
 #'
 #' @export
-rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
+rtm_smooth <- function(spe,labels = NULL,nbr_list = NULL,k = NULL){
+
+  if (is.null(labels)){
+    stop('A vector of labels must be provided to apply label smoothing.')
+  }
+
+  new_labels <- as.character(labels)
+
   if (!is.null(k)){
     coldata <- colnames(colData(spe))
     if (!all(c('array_row','array_col') %in% coldata)){
       stop('Error: array_row and array_col not found in spe metadata.This function assumes that spatial array coordinates are stored under these two names.')
     }
     else {dist_mat <- get_dist_cpp(as.matrix(colData(spe)[,c('array_row','array_col')]))}
-  }
-  new_labels <- as.character(labels)
-
-  if (!is.null(k)){
     for(i in 1:ncol(spe)){
       #Consider retaining current spot as a 'neighbor' to incorporate information in decision (tie-breaker)
       cur_nbr <- dist_mat[i,-i]
@@ -236,7 +179,7 @@ rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
                               rownames(label_count)[which(label_count >= 0.5)],
                               new_labels[i])
     }
-  } else{
+  } else if (!is.null(nbr_list)){
     for(i in 1:ncol(spe)){
       cur_nbr <- nbr_list[[i]]
       if(is.matrix(cur_nbr)){
@@ -252,23 +195,12 @@ rtm_smooth <- function(spe,labels,nbr_list,k = NULL){
                               rownames(label_count)[which(label_count >= 0.5)],
                               new_labels[i])
     }
+  } else {
+    stop('rtm_smooth requires either k or nbr_list to apply label smoothing.')
   }
 
   return(new_labels)
 }
-
-#' @export
-check_nbr <- function(spe,nbr_set,cell_id,sample_id){
-  spe$nbr <- NA
-  spe$nbr[cell_id] <- 'Cur Cell'
-  spe$nbr[nbr_set[nbr_set[,2] == 1,1] + 1] <- 'NBR'
-  spe$nbr[nbr_set[nbr_set[,2] == 0,1] + 1] <- 'Neg. Sample'
-  spe$nbr <- as.factor(spe$nbr)
-  vis_clus(spe,
-           sample_id,
-           clustervar = 'nbr')
-}
-
 
 
 
@@ -351,62 +283,155 @@ minmax_norm <- function(adj_mat){
   return(adj_norm)
 }
 
-#' @export
-get_perf <- function(spe,df,ground_truth,nbr_list,smooth = TRUE, k= NULL){
-  ari_perf <- apply(df,2,function(a){
-    if (smooth){
-      a <- rtm_smooth(spe,a,nbr_list,k)
-    }
-    aricode::ARI(a[!is.na(a)],ground_truth[!is.na(a)])
-  })
-  nmi_perf <- apply(df,2,function(a){
-    if (smooth){
-      a <- rtm_smooth(spe,a,nbr_list,k)
-    }
-    aricode::NMI(a[!is.na(a)],ground_truth[!is.na(a)])
-  })
 
 
-  asw_perf <- apply(df,2,function(a){
-    if (smooth){
-      a <- rtm_smooth(spe,a,nbr_list,k)
-      a <- as.numeric(a)
-    }
-    keep_idx <- which(!is.na(a))
-    si_df <- cluster::silhouette(a[keep_idx],dist = dist(theta(spe_test[,keep_idx])))
-    mean(si_df[,3])
-  })
-  out_df <- data.frame(ARI = ari_perf,
-                       NMI = nmi_perf,
-                       ASW = asw_perf)
-  rownames(out_df) <- colnames(df)
-  return(out_df)
-}
+# #@export
+# plot_clusters <- function(spe,anno_label = '',test_sample = '',pred_list,clusters = 7,
+#                           model_name = 'Default Name'){
+#   #Run kmeans
+#   temp <- kmeans(pred_list,clusters)
+#   #store in spe
+#   spe$clust <- temp$cluster
+#   cur_ari <- aricode::ARI(spe$clust,colData(spe)[,anno_label])
+#   print(paste("ARI: ",round(cur_ari,3)))
+#   ari_plot <- vis_clus(spe,
+#                        clustervar = "clust",
+#                        sampleid = test_sample) +
+#     labs(subtitle = paste(model_name," ARI: ",round(cur_ari,3),sep = ''))
+#   return(ari_plot)
+# }
 
 
-#' @export
-plot_perf <- function(spe, df, perf, nbr_list, smooth = TRUE, k = NULL) {
-  all_plots <- list()
-  for (i in 1:ncol(df)) {
-    spe$cur <- df[, i]
-    if (smooth) {
-      spe$cur <- rtm_smooth(spe, spe$cur, nbr_list, k)
-    }
-    plot_title <- paste(
-      spe$sample_id[1],
-      " ",
-      colnames(df)[i],
-      "\n",
-      "ARI:",
-      round(perf[i, 1], 3),
-      " NMI:",
-      round(perf[i, 2], 3),
-      " ASW:",
-      round(perf[i,3],3),
-      sep = ''
-    )
-    all_plots[[i]] <- vis_clus(spe, spe$sample_id[1], clustervar = 'cur') +
-        labs(title = plot_title)
-  }
-  return(all_plots)
-}
+#  @export
+# check_nbr <- function(spe,nbr_set,cell_id,sample_id){
+#   spe$nbr <- NA
+#   spe$nbr[cell_id] <- 'Cur Cell'
+#   spe$nbr[nbr_set[nbr_set[,2] == 1,1] + 1] <- 'NBR'
+#   spe$nbr[nbr_set[nbr_set[,2] == 0,1] + 1] <- 'Neg. Sample'
+#   spe$nbr <- as.factor(spe$nbr)
+#   vis_clus(spe,
+#            sample_id,
+#            clustervar = 'nbr')
+# }
+
+
+
+# # @export
+# get_perf <- function(spe,df,ground_truth,nbr_list,smooth = TRUE, k= NULL){
+#   ari_perf <- apply(df,2,function(a){
+#     if (smooth){
+#       a <- rtm_smooth(spe,a,nbr_list,k)
+#     }
+#     aricode::ARI(a[!is.na(a)],ground_truth[!is.na(a)])
+#   })
+#   nmi_perf <- apply(df,2,function(a){
+#     if (smooth){
+#       a <- rtm_smooth(spe,a,nbr_list,k)
+#     }
+#     aricode::NMI(a[!is.na(a)],ground_truth[!is.na(a)])
+#   })
+#
+#
+#   asw_perf <- apply(df,2,function(a){
+#     if (smooth){
+#       a <- rtm_smooth(spe,a,nbr_list,k)
+#       a <- as.numeric(a)
+#     }
+#     keep_idx <- which(!is.na(a))
+#     si_df <- cluster::silhouette(a[keep_idx],dist = dist(theta(spe_test[,keep_idx])))
+#     mean(si_df[,3])
+#   })
+#   out_df <- data.frame(ARI = ari_perf,
+#                        NMI = nmi_perf,
+#                        ASW = asw_perf)
+#   rownames(out_df) <- colnames(df)
+#   return(out_df)
+# }
+
+
+# @export
+# plot_perf <- function(spe, df, perf, nbr_list, smooth = TRUE, k = NULL) {
+#   all_plots <- list()
+#   for (i in 1:ncol(df)) {
+#     spe$cur <- df[, i]
+#     if (smooth) {
+#       spe$cur <- rtm_smooth(spe, spe$cur, nbr_list, k)
+#     }
+#     plot_title <- paste(
+#       spe$sample_id[1],
+#       " ",
+#       colnames(df)[i],
+#       "\n",
+#       "ARI:",
+#       round(perf[i, 1], 3),
+#       " NMI:",
+#       round(perf[i, 2], 3),
+#       " ASW:",
+#       round(perf[i,3],3),
+#       sep = ''
+#     )
+#     all_plots[[i]] <- vis_clus(spe, spe$sample_id[1], clustervar = 'cur') +
+#         labs(title = plot_title)
+#   }
+#   return(all_plots)
+# }
+
+
+## Build ROC Curve
+#  @export
+# build_ROC <- function(all_pred,grd_adj,nbr_list,full_adj = FALSE,
+#                       titles = "Def. Title"){
+#   roc_list <- list()
+#   pred_adj <- all_pred
+#   model_name <- titles
+#   perf_df <- matrix(0,nrow = 0,ncol = 5)
+#   for (thresh in seq(0,1,length.out = 250)){
+#     tn <- 0
+#     tp <- 0
+#     fn <- 0
+#     fp <- 0
+#     if (full_adj){
+#       pred_adj[pred_adj > thresh] <- 1
+#       pred_adj[pred_adj <= thresh] <- 0
+#
+#       tp <- length(which((pred_adj + grd_adj) == 2))
+#       tn <- length(which((pred_adj + grd_adj) == 0))
+#       fp <- length(which((pred_adj - grd_adj) == 1))
+#       fn <- length(which((pred_adj - grd_adj) == -1))
+#     }
+#     else {
+#       for (cell in 1:ncol(pred_adj)){
+#         if (nrow(nbr_list[[cell]]) == 0){
+#           next
+#         }
+#         grd_adj <- nbr_list[[cell]][,2]
+#         nbr_ids <- nbr_list[[cell]][,1]+1
+#         sub_adj <-  pred_adj[cell,nbr_ids]
+#         sub_adj[sub_adj > thresh] <- 1
+#         sub_adj[sub_adj <= thresh] <- 0
+#
+#         tp <- tp + length(which((sub_adj + grd_adj) == 2))
+#         tn <- tn + length(which((sub_adj + grd_adj) == 0))
+#         fp <- fp + length(which((sub_adj - grd_adj) == 1))
+#         fn <- fn + length(which((sub_adj - grd_adj) == -1))
+#
+#         if (sum(c(tp,tn,fp,fn)) == 0){stop('Error with TP/TN/FP/FN Calculation!')}
+#       }
+#
+#
+#     }
+#
+#
+#
+#     tpr <- tp/(tp+fn)
+#     fpr <- fp/(fp+tn)
+#     sens <- tp/(tp+fn) #recall
+#     precis <- tp/(tp+fp)
+#     perf_df <-rbind(perf_df,c(tpr,fpr,sens,precis,thresh))
+#   }
+#   roc_list[[model_name]] <- perf_df[,1:4]
+#   #print(DescTools::AUC(perf_df[,2],perf_df[,1]))
+#
+#
+#   return(roc_list)
+# }
