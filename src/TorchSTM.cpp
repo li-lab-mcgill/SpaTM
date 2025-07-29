@@ -34,10 +34,10 @@ void progress_bar(double iter,int maxiter,double elbo, double train_acc,double v
 
 
 //forward MLP
-// [[Rcpp::export]]
+
 arma::mat mlp_forward(const arma::mat& X,
                       int layers,
-                      Rcpp::List& weights,
+                      std::unordered_map<int,arma::mat> mlp_weights,
                       bool dummy_topic = false) {
 
 
@@ -51,14 +51,14 @@ arma::mat mlp_forward(const arma::mat& X,
   // Calculate hidden layer output using ReLU activation
   arma::mat weight;
   arma::rowvec bias;
-  while (i < weights.length()){
-    weight = Rcpp::as<arma::mat>(weights[i]);
-    bias = Rcpp::as<arma::rowvec>(weights[i+1]);
+  while (i < mlp_weights.size()){
+    weight = mlp_weights[i];
+    bias = mlp_weights[i+1];
 
     cur_val = cur_val*weight;
     cur_val.each_row() += bias;
     //Rcout << size(cur_val);
-    if (layers > 0 && i != layers){cur_val = cur_val % (cur_val > 0);}
+    if (layers > 0 && (i+2) != mlp_weights.size()){cur_val = cur_val % (cur_val > 0);}
     i += 2;
   }
 
@@ -85,79 +85,34 @@ arma::mat mlp_forward(const arma::mat& X,
   // }
   return output;
 }
-// // [[Rcpp::export]]
-// arma::mat mlp_forward(const arma::mat& X,
-//                        int layers,
-//                        Rcpp::List& weights,
-//                        bool dummy_topic = false) {
-//   Rcout << "here 2CA" << std::endl;
-//   arma::mat cur_val = X;
-//   // Added dummy topic feature
-//   if (dummy_topic) {
-//     cur_val.shed_col(cur_val.n_cols - 1);
-//   }
-//
-//   // Calculate hidden layer output using ReLU activation
-//   arma::mat weight;
-//   arma::rowvec bias;
-//
-//   int i = 0;
-//   while (i < 2 * layers) {
-//     Rcout << "here 2CB" << std::endl;
-//     weight = Rcpp::as<arma::mat>(weights[i]);
-//     Rcout << "here 2CBA" << std::endl;
-//     bias = Rcpp::as<arma::rowvec>(weights[i + 1]);
-//     Rcout << "here 2CBB" << std::endl;
-//     cur_val = cur_val * weight;
-//     Rcout << "here 2CBC" << std::endl;
-//     cur_val.each_row() += bias;
-//     cur_val = arma::clamp(cur_val, 0, arma::datum::inf); // ReLU activation
-//     Rcout << "here 2CBD" << std::endl;
-//     i += 2;
-//   }
-//   Rcout << "here 2CC" << std::endl;
-//   // Output layer
-//   weight = Rcpp::as<arma::mat>(weights[i]);
-//   bias = Rcpp::as<arma::rowvec>(weights[i + 1]);
-//   cur_val = cur_val * weight;
-//   cur_val.each_row() += bias;
-//   Rcout << "here 2CD" << std::endl;
-//   // Calculate output with numerically stable softmax
-//   arma::mat output =  arma::exp(cur_val);
-//   arma::vec sum_exp = arma::sum(output, 1);
-//   output = output.each_col() / sum_exp;
-//   Rcout << "here 2CE" << std::endl;
-//   return output;
-// }
 
 
-// [[Rcpp::export]]
+
 arma::rowvec get_label_prob(arma::rowvec ndk_row,
                             const arma::rowvec& gamma_weight,
                             int gene_count,int K,
                             int label,int layers,
-                            Rcpp::List& weights,
+                            std::unordered_map<int,arma::mat> mlp_weights,
                             bool dummy_topic = false){
-  Rcout << "here 2A" << std::endl;
+
   arma::mat label_prob = arma::zeros<arma::mat>(K,K);
 
 
   ndk_row -= gamma_weight*gene_count; //remove cur value
 
-  Rcout << "here 2B" << std::endl;
+
   label_prob.each_row() = ndk_row;
 
   label_prob.diag() += gene_count;
 
   label_prob.each_col() /= arma::sum(label_prob,0).t();
-  Rcout << "here 2C" << std::endl;
+
   //////
 
   arma::mat mlp_out = mlp_forward(label_prob,
                                   layers,
-                                  weights,
+                                  mlp_weights,
                                   dummy_topic);
-  Rcout << "here 2D" << std::endl;
   arma::rowvec final_prob = mlp_out.col(label).t();
   // concatenate 1/K to final_prob if dummy topic
   // Added dummy topic feature
@@ -196,8 +151,15 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
                      Rcpp::List& weights,
                      double& elbo,
                      int num_threads = 1,
-                     int iter = 0,
-                     bool dummy_topic = false){
+                     int burnin = 0,
+                     bool dummy_topic = false,
+                     int cur_iter = 0){
+  std::unordered_map<int,arma::mat> mlp_weights;
+  for (int b = 0; b < weights.length(); b++){
+    arma::mat cur_mat = Rcpp::as<arma::mat>(weights[b]);
+    mlp_weights[b] = cur_mat;
+  }
+
   omp_set_num_threads(num_threads);
   int C = arma::accu(spe_counts);
   int M = genes.n_elem;
@@ -214,19 +176,18 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
 
   arma::rowvec beta_sum = arma::sum(beta,0);
   arma::rowvec nwk_sum = arma::sum(n_wk,0);
-  #pragma omp parallel for private(weights) shared(STM_CellMap, n_dk, n_wk, beta, beta_sum, nwk_sum)
+  #pragma omp parallel for private(mlp_weights) shared(STM_CellMap, n_dk, n_wk, beta, beta_sum, nwk_sum)
   for (int i = 1; i <= D; i++){
-    Rcout << "here " << std::endl;
     arma::rowvec gamma_k = arma::zeros<arma::rowvec>(K);
     arma::rowvec cur_counts = arma::zeros<arma::rowvec>(K);
     arma::rowvec cur_ndk = arma::zeros<arma::rowvec>(K);
     arma::rowvec label_post = arma::zeros<arma::rowvec>(K);
     double d_diff = 999;
-    int iter = 100;
+    int iter = burnin;
 
     arma::mat cur_gamma = STM_CellMap[i].cell_gamma; //TODO
     arma::mat m = STM_CellMap[i].cell_mtx; //TODO
-    Rcout << "here 1" << std::endl;
+
     while((d_diff > 0.01) & (iter > 0)){ //consider OR statement
       iter--;
 
@@ -235,7 +196,7 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
       cur_ndk = n_dk.row(ndk_id);
 
       for (int token = 0; token < tokens; token++){
-        Rcout << "here 2" << std::endl;
+
         int counts = m(token,0);
         int gene = m(token,2)-1;
         cur_counts = cur_gamma.row(token)*counts;
@@ -245,9 +206,8 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
                                     counts,K,
                                     STM_CellMap[i].cell_label,
                                     layers,
-                                    weights,
+                                    mlp_weights,
                                     dummy_topic);
-        Rcout << "here 3" << std::endl;
         if (label_post.has_nan()){
           label_post = arma::ones<arma::rowvec>(K)/K;
           //Rcout << "Encountered Nan in Label Probs" << std::endl;
@@ -276,7 +236,7 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
           Rcout << label_post << std::endl;
           stop("Variational Estimates contain NAN");
         }
-        Rcout << "here 4" << std::endl;
+
         cur_gamma.row(token) = gamma_k;
 
       }
@@ -304,8 +264,27 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
                             n_wk,
                             C,
                             elbo_mat,
-                            iter);
+                            cur_iter);
   STM_CellMap.clear();
 
   return elbo;
+}
+
+// [[Rcpp::export]]
+arma::mat test_mlp_forward(const arma::mat& X,
+                           int layers,
+                           Rcpp::List& weights,
+                           bool dummy_topic = false){
+  std::unordered_map<int,arma::mat> mlp_weights;
+  for (int b = 0; b < weights.length(); b++){
+    arma::mat cur_mat = Rcpp::as<arma::mat>(weights[b]);
+    mlp_weights[b] = cur_mat;
+  }
+
+  arma::mat forward_out = mlp_forward(X,
+                                      layers,
+                                      mlp_weights,
+                                      dummy_topic);
+  return forward_out;
+
 }
