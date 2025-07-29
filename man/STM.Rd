@@ -21,11 +21,14 @@ STM(
   device = NULL,
   balanced_class = TRUE,
   dummy_topic = FALSE,
-  burnin = 5
+  burnin_lda = 5,
+  burnin = 100
 )
 }
 \arguments{
 \item{spe}{A spatial experiment object (typically of class `SummarizedExperiment`) containing spatial transcriptomics data, including counts, metadata, and gene information.}
+
+\item{label}{a character representing the column in colData(spe) with the class labels}
 
 \item{num_threads}{Number of threads to use for parallel computation (default is 1).}
 
@@ -55,7 +58,9 @@ STM(
 
 \item{dummy_topic}{Logical indicating whether to add a dummy topic for regularization (default is `FALSE`).}
 
-\item{burnin}{Number of iterations for burn-in phase in Torch-STM (default is 5).}
+\item{burnin_lda}{Number of iterations for burn-in phase in Torch-STM (default is 5).}
+
+\item{burnin}{Maximum number of iterations to run during the STM LDA step for each sample (default is 0)}
 }
 \value{
 The input spatial experiment object (`spe`) with updated metadata containing the STM model results:
@@ -69,12 +74,4 @@ This function performs spatial topic modeling on single-cell spatial transcripto
 }
 \details{
 The function supports various parameters for training, including regularization, optimization settings, and the option for a validation set to prevent overfitting in the Torch-STM mode.
-}
-\examples{
-# Example 1: Running GLM-STM with default settings
-spe_result <- STM(spe = spe_object)
-
-# Example 2: Running Torch-STM with MLP model
-spe_result <- STM(spe = spe_object, mlp = my_mlp_model, mlp_layers = c(64, 32), spe_val = spe_validation)
-
 }

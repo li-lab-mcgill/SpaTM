@@ -10,7 +10,9 @@ SingleCellTopicExperiment(
   labels = NULL,
   K = NULL,
   hvg = NULL,
-  verbal = FALSE
+  verbal = FALSE,
+  disease = NULL,
+  disease_type = NULL
 )
 }
 \arguments{

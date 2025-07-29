@@ -4,7 +4,7 @@
 \alias{build_alpha}
 \title{Build Alpha Prior Matrix}
 \usage{
-build_alpha(te, labels = NULL, K = 10)
+build_alpha(te, labels = NULL, K = 10, disease = NULL, disease_type = NULL)
 }
 \arguments{
 \item{te}{A SingleCellTopicExperiment or SpatialTopicExperiment object.}

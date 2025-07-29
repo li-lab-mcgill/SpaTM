@@ -13,9 +13,17 @@ update_scte <- function(scte,labels = NULL, guided = FALSE, K = 10){
 #### Getters & Setters ####
 
 #### Alpha Prior ####
-setGeneric("alphaPrior", function(te) standardGeneric("alphaPrior"))
-setGeneric("alphaPrior<-", function(te, values) standardGeneric("alphaPrior<-"))
 
+setGeneric("alphaPrior", function(te) standardGeneric("alphaPrior"))
+
+setGeneric("alphaPrior<-", function(te, value) standardGeneric("alphaPrior<-"))
+
+#' Get Alpha Prior Matrix
+#'
+#' Retrieves the alpha prior matrix (cell-by-topic) from a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @return The alpha prior matrix.
 #' @export
 setMethod(
   f = "alphaPrior",
@@ -24,20 +32,36 @@ setMethod(
     return(te@alphaPrior)
   }
 )
+
+#' Set Alpha Prior Matrix
+#'
+#' Sets the alpha prior matrix (cell-by-topic) for a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @param value The new alpha prior matrix.
+#' @return The updated TopicExperiment object.
 #' @export
 setReplaceMethod(
   f = "alphaPrior",
   signature = c("TopicExperiment"),
-  function(te,values){
-    te@alphaPrior <- values
+  function(te,value){
+    te@alphaPrior <- value
     return(te)
   }
 )
 
-
 #### Beta Prior ####
+
 setGeneric("betaPrior", function(te) standardGeneric("betaPrior"))
-setGeneric("betaPrior<-", function(te, values) standardGeneric("betaPrior<-"))
+
+setGeneric("betaPrior<-", function(te, value) standardGeneric("betaPrior<-"))
+
+#' Get Beta Prior Matrix
+#'
+#' Retrieves the beta prior matrix (gene-by-topic) from a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @return The beta prior matrix.
 #' @export
 setMethod(
   f = "betaPrior",
@@ -46,20 +70,36 @@ setMethod(
     return(te@betaPrior)
   }
 )
+
+#' Set Beta Prior Matrix
+#'
+#' Sets the beta prior matrix (gene-by-topic) for a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @param value The new beta prior matrix.
+#' @return The updated TopicExperiment object.
 #' @export
 setReplaceMethod(
   f = "betaPrior",
   signature = "TopicExperiment",
-  function(te,values){
-    te@betaPrior <- values
+  function(te,value){
+    te@betaPrior <- value
     return(te)
   }
 )
 
-
 ## Cell by Topics (ndk) ####
+
 setGeneric("ndk", function(te) standardGeneric("ndk"))
-setGeneric("ndk<-", function(te, values) standardGeneric("ndk<-"))
+
+setGeneric("ndk<-", function(te, value) standardGeneric("ndk<-"))
+
+#' Get Cell-Topic Matrix (ndk)
+#'
+#' Retrieves the cell-topic matrix (ndk) from a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @return The cell-topic matrix (ndk).
 #' @export
 setMethod(
   f = "ndk",
@@ -69,19 +109,35 @@ setMethod(
   }
 )
 
+#' Set Cell-Topic Matrix (ndk)
+#'
+#' Sets the cell-topic matrix (ndk) for a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @param value The new cell-topic matrix (ndk).
+#' @return The updated TopicExperiment object.
 #' @export
 setReplaceMethod(
   f = "ndk",
   signature = "TopicExperiment",
-  function(te,values){
-    te@ndk <- values
+  function(te,value){
+    te@ndk <- value
     return(te)
   }
 )
 
 ## Gene by Topics (nwk) ####
+
 setGeneric("nwk", function(te) standardGeneric("nwk"))
-setGeneric("nwk<-", function(te, values) standardGeneric("nwk<-"))
+
+setGeneric("nwk<-", function(te, value) standardGeneric("nwk<-"))
+
+#' Get Gene-Topic Matrix (nwk)
+#'
+#' Retrieves the gene-topic matrix (nwk) from a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @return The gene-topic matrix (nwk).
 #' @export
 setMethod(
   f = "nwk",
@@ -91,20 +147,36 @@ setMethod(
   }
 )
 
+#' Set Gene-Topic Matrix (nwk)
+#'
+#' Sets the gene-topic matrix (nwk) for a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @param value The new gene-topic matrix (nwk).
+#' @return The updated TopicExperiment object.
 #' @export
 setReplaceMethod(
   f = "nwk",
   signature = "TopicExperiment",
-  function(te,values){
-    te@nwk <- values
+  function(te,value){
+    te@nwk <- value
     return(te)
   }
 )
 
 ## Theta ####
-setGeneric("theta", function(te) standardGeneric("theta"))
-setGeneric("theta<-", function(te, values) standardGeneric("theta<-"))
 
+setGeneric("theta", function(te) standardGeneric("theta"))
+
+setGeneric("theta<-", function(te, value) standardGeneric("theta<-"))
+
+#' Get Theta Matrix (Cell-Topic Distributions)
+#'
+#' Retrieves the theta matrix (cell-topic distributions)
+#' from a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @return The theta matrix.
 #' @export
 setMethod(
   f = "theta",
@@ -114,20 +186,35 @@ setMethod(
   }
 )
 
+#' Set Theta Matrix (Cell-Topic Distributions)
+#'
+#' Sets the theta matrix (cell-topic distributions) for a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @param value The new theta matrix.
+#' @return The updated TopicExperiment object.
 #' @export
 setReplaceMethod(
   f = "theta",
   signature = "TopicExperiment",
-  function(te,values){
-    te@theta <- values
+  function(te,value){
+    te@theta <- value
     return(te)
   }
 )
 
-##Phi ####
-setGeneric("phi", function(te) standardGeneric("phi"))
-setGeneric("phi<-", function(te, values) standardGeneric("phi<-"))
+## Phi ####
 
+setGeneric("phi", function(te) standardGeneric("phi"))
+
+setGeneric("phi<-", function(te, value) standardGeneric("phi<-"))
+
+#' Get Phi Matrix (Gene-Topic Distributions)
+#'
+#' Retrieves the phi matrix (gene-topic distributions) from a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @return The phi matrix.
 #' @export
 setMethod(
   f = "phi",
@@ -137,12 +224,19 @@ setMethod(
   }
 )
 
+#' Set Phi Matrix (Gene-Topic Distributions)
+#'
+#' Sets the phi matrix (gene-topic distributions) for a TopicExperiment object.
+#'
+#' @param te A TopicExperiment object.
+#' @param value The new phi matrix.
+#' @return The updated TopicExperiment object.
 #' @export
 setReplaceMethod(
   f = "phi",
   signature = "TopicExperiment",
-  function(te,values){
-    te@phi <- values
+  function(te,value){
+    te@phi <- value
     return(te)
   }
 )
@@ -160,8 +254,9 @@ setReplaceMethod(
 #' @param K Integer specifying the number of topics (ignored if labels are provided).
 #'
 #' @return A matrix representing the alpha prior.
+#' @import Matrix
 #' @export
-build_alpha <- function(te,labels = NULL,K = 10){
+build_alpha <- function(te,labels = NULL,K = 10,disease = NULL,disease_type = NULL){
   if (is.null(labels)){
     a <- matrix(1,ncol(te),K)
     colnames(a) <- paste("Topic-",1:K,sep='')
@@ -178,12 +273,26 @@ build_alpha <- function(te,labels = NULL,K = 10){
     a <- sparseMatrix(i = seq_along(cell_id),
                       j = cell_id,
                       x = alpha,
-                      dims = c(D, K)) %>% as.matrix()
-    a[a == 0] <- 0.01
-    rownames(a) <- colnames(te)
-    colnames(a) <- covariates
+                      dims = c(D, K))
     a <- as.matrix(a)
 
+    colnames(a) <- covariates
+
+    ## If disease info provided - update matrix accordingly
+
+
+    if (!is.null(disease) & !is.null(disease_type)){
+      a <- a[,rep(1:ncol(a),each =length(unique(disease)))]
+
+      a <- BuildDiseaseAlpha(a,disease)
+      colnames(a) <- paste(rep(covariates,
+                               each = length(disease_type)),
+                               unique(disease_type),
+                               sep='_')
+    }
+    a[a == 0] <- 0.01
+    rownames(a) <- colnames(te)
+    a <- as.matrix(a)
     return(a)
 
   }
@@ -220,7 +329,7 @@ buildPriors <- function(te,labels = NULL,guided = FALSE,K = 10){
   if (guided){
     if(!is.null(labels)){
       alphaPrior(te) <- build_alpha(te,labels)
-      K <- ncol(alpha(te))
+      K <- ncol(alphaPrior(te))
     } else {
       stop("labels argument must be defined if guided parameter is set to TRUE")
     }
@@ -280,6 +389,7 @@ buildPhi <- function(te){
 
 ##Update Show Methods
 #### Print Class ####
+#' @export
 setMethod("show",
           signature = "SingleCellTopicExperiment", function(object) {
             callNextMethod()  # Calls ParentClass's show() first
@@ -305,6 +415,7 @@ setMethod("show",
 
 
 #### Print Class ####
+#' @export
 setMethod("show",
           signature = "SpatialTopicExperiment", function(object) {
             callNextMethod()  # Calls ParentClass's show() first
@@ -330,6 +441,7 @@ setMethod("show",
 
 
 ###Subset Topic Matrices ####
+#' @export
 setMethod("[", c("SingleCellTopicExperiment", "ANY", "ANY"),
           function(x, i, j, ..., drop=FALSE) {
 
@@ -352,7 +464,7 @@ setMethod("[", c("SingleCellTopicExperiment", "ANY", "ANY"),
             return(x)
           })
 
-
+#' @export
 setMethod("[", c("SpatialTopicExperiment", "ANY", "ANY"),
           function(x, i, j, ..., drop=FALSE) {
                 if (missing(i)) i <- TRUE
@@ -374,8 +486,8 @@ setMethod("[", c("SpatialTopicExperiment", "ANY", "ANY"),
                 return(x)
 })
 
-
 ## Update dimnames
+#' @export
 setReplaceMethod("dimnames", c("SingleCellTopicExperiment", "list"),
                  function(x, value)
                  {
@@ -390,8 +502,7 @@ setReplaceMethod("dimnames", c("SingleCellTopicExperiment", "list"),
                    rownames(x@theta) <- value[[2L]]
                    return(x)})
 
-
-
+#' @export
 setReplaceMethod("dimnames", c("SpatialExperiment", "list"),
                  function(x, value)
                  {

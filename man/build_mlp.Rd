@@ -39,13 +39,17 @@ This function constructs a multi-layer perceptron (MLP) model with up to 3 hidde
 If a dummy topic is used, the input dimension is adjusted accordingly.
 }
 \examples{
-# Example 1: Build a 1-hidden-layer MLP with 100 input features, 50 hidden units, and 10 output units.
+# Example 1: Build a 1-hidden-layer MLP with 100 input features
+# 50 hidden units, and 10 output units.
 mlp_model <- build_mlp(layers = 1, d_in = 100, d_hidden = 50, d_out = 10)
 
-# Example 2: Build a 2-hidden-layer MLP with 100 input features, 64 and 32 hidden units, and 10 output units.
-mlp_model <- build_mlp(layers = 2, d_in = 100, d_hidden = c(64, 32), d_out = 10)
+# Example 2: Build a 2-hidden-layer MLP with 100 input features,
+# 64 and 32 hidden units, and 10 output units.
+mlp_model <- build_mlp(layers = 2, d_in = 100,
+ d_hidden = c(64, 32), d_out = 10)
 
 # Example 3: Build a 3-hidden-layer MLP with a dummy topic.
-mlp_model <- build_mlp(layers = 3, d_in = 100, d_hidden = c(64, 32, 16), d_out = 10, dummy_topic = TRUE)
+mlp_model <- build_mlp(layers = 3, d_in = 100,
+d_hidden = c(64, 32, 16), d_out = 10, dummy_topic = TRUE)
 
 }

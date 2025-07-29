@@ -15,11 +15,12 @@ RTM(
   verbal = TRUE,
   zero_gamma = FALSE,
   rand_gamma = TRUE,
-  m_update = T
+  m_update = T,
+  burnin = 1
 )
 }
 \arguments{
-\item{scte}{A `SpatialTopicExperiment` object containing the single-cell data.}
+\item{scte}{A `SpatialTopicExperiment` object.}
 
 \item{K}{An integer specifying the number of topics.}
 
@@ -31,18 +32,24 @@ RTM(
 
 \item{maxiter}{An integer specifying the maximum number of training iterations (default: 100).}
 
+\item{lr}{A numeric specifying the learning rate for RTM training (default: 1e-5).}
+
 \item{verbal}{A logical indicating whether to print progress messages (default: TRUE).}
 
 \item{zero_gamma}{A logical specifying whether to initialize gamma values to zero (default: FALSE).}
 
 \item{rand_gamma}{A logical indicating whether to randomly initialize gamma values (default: TRUE).}
+
+\item{m_update}{A logical specifying if the classifier/regression component should be updated (default: TRUE)}
+
+\item{burnin}{Maximum number of iterations to run during the STM LDA step for each sample (default is 0)}
 }
 \value{
 A `SpatialTopicExperiment` object with updated RTM weights stored in `metadata(scte)[['RTM_weights']]`.
 }
 \description{
 This function trains a Relational Topic Model (RTM) on a `SpatialTopicExperiment` object.
-The RTM incorporates relational data (e.g., cell-cell interactions) into the topic modeling process.
+The RTM incorporates relational data (cell neighborhoods) into the topic modeling process.
 }
 \details{
 The RTM extends topic modeling by incorporating relational information, such as neighborhood information.

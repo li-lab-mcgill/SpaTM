@@ -20,6 +20,7 @@ STM_Torch(
   spe_val,
   device = torch_device("cpu"),
   balanced_class = TRUE,
+  burnin = 1,
   dummy_topic = FALSE
 )
 }
@@ -54,6 +55,8 @@ STM_Torch(
 
 \item{balanced_class}{Logical indicating whether to balance the class distribution during model training (default is `TRUE`).}
 
+\item{burnin}{Maximum number of iterations to run during the STM LDA step for each sample (default is 0)}
+
 \item{dummy_topic}{Logical indicating whether to add a dummy topic for regularization (default is `FALSE`).}
 }
 \value{
@@ -61,11 +64,6 @@ The trained MLP model (of class `nn_module`).
 }
 \description{
 This function trains a SpaTM-S using a multi-layer perceptron (MLP) model. Note that this function should only be used by the \link{STM} wrapper function for ease-of-use.
-}
-\examples{
-# Example: Running Torch-STM with MLP model.
-spe_result <- STM_Torch(spe = spe_object, labels = labels, mlp = my_mlp_model, mlp_layers = c(64, 32), spe_val = spe_validation)
-
 }
 \seealso{
 \link{STM}

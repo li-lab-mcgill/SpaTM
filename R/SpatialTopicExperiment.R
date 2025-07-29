@@ -43,7 +43,7 @@ setClass(
 #' @return A `SpatialTopicExperiment` object initialized with topic modeling parameters.
 #'
 #' @export
-#' @import scuttle
+#' @import scuttle SpatialExperiment
 #' @importFrom scran modelGeneVar getTopHVGs
 #' @importClassesFrom Matrix dgCMatrix
 SpatialTopicExperiment <- function(spe,guided = FALSE,

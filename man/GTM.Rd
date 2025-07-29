@@ -12,7 +12,9 @@ GTM(
   maxiter = 100,
   verbal = TRUE,
   zero_gamma = FALSE,
-  rand_gamma = TRUE
+  rand_gamma = TRUE,
+  thresh = 1e-08,
+  burnin = 1
 )
 }
 \arguments{
@@ -31,6 +33,8 @@ GTM(
 \item{zero_gamma}{Logical, whether to initialize gamma values to zero. Default is FALSE.}
 
 \item{rand_gamma}{Logical, whether to initialize gamma values randomly. Default is TRUE.}
+
+\item{burnin}{Maximum number of iterations to run during the STM LDA step for each sample (default is 0)}
 }
 \value{
 A `SingleCellTopicExperiment` or `SpatialTopicExperiment` object with updated topic distributions.

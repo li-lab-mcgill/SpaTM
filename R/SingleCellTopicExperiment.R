@@ -44,7 +44,7 @@ setClass(
 #'
 #' @return A `SingleCellTopicExperiment` object with initialized topic modeling components.
 #'
-#' @import scuttle
+#' @import scuttle SingleCellExperiment
 #' @importFrom scran modelGeneVar getTopHVGs
 #' @importClassesFrom Matrix dgCMatrix
 #' @export
@@ -52,7 +52,9 @@ SingleCellTopicExperiment <- function(sce,guided = FALSE,
                                       labels = NULL,
                                       K = NULL,
                                       hvg = NULL,
-                                      verbal = FALSE){
+                                      verbal = FALSE,
+                                      disease = NULL,
+                                      disease_type = NULL){
   if (!is(counts(sce),'dgCMatrix')){
     message('Converting counts to sparse matrix (dgCmatrix). \nSpaTM is currently not compatible with other matrix formats.')
     counts(sce) <- as(counts(sce),'dgCMatrix')
@@ -80,7 +82,16 @@ SingleCellTopicExperiment <- function(sce,guided = FALSE,
         colData(scte)[,labels] <- as.factor(colData(scte)[,labels])
       }
       scte$int_celltype <- as.numeric(colData(scte)[,labels])
-      alphaPrior(scte) <- build_alpha(scte,labels)
+      if(verbal){
+        if(!is.null(disease) & !is.null(disease_type)){
+          cat("Running disease-informed initialization\n")
+        }
+      }
+      alphaPrior(scte) <- build_alpha(te = scte,
+                                      labels = labels,
+                                      K = NULL,
+                                      disease = disease,
+                                      disease_type = disease_type)
       K <- ncol(alphaPrior(scte))
     } else {
       stop("labels argument must be defined if guided parameter is set to TRUE")

@@ -30,6 +30,18 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// BuildDiseaseAlpha
+arma::mat BuildDiseaseAlpha(const arma::mat& a, const arma::uvec& disease);
+RcppExport SEXP _SpaTM_BuildDiseaseAlpha(SEXP aSEXP, SEXP diseaseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type a(aSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type disease(diseaseSEXP);
+    rcpp_result_gen = Rcpp::wrap(BuildDiseaseAlpha(a, disease));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_theta
 arma::mat get_theta(const arma::mat& n_dk, const arma::mat& alpha);
 RcppExport SEXP _SpaTM_get_theta(SEXP n_dkSEXP, SEXP alphaSEXP) {
@@ -55,8 +67,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // train_gtm
-void train_gtm(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, const arma::mat& alpha, const arma::mat& beta, int K, int D, arma::mat& n_dk, arma::mat& n_wk, int num_threads, int maxiter, bool verbal, bool zero_gamma, bool rand_gamma, double thresh);
-RcppExport SEXP _SpaTM_train_gtm(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP threshSEXP) {
+void train_gtm(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, const arma::mat& alpha, const arma::mat& beta, int K, int D, arma::mat& n_dk, arma::mat& n_wk, int num_threads, int maxiter, bool verbal, bool zero_gamma, bool rand_gamma, double thresh, int burnin);
+RcppExport SEXP _SpaTM_train_gtm(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP threshSEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::sp_mat& >::type counts(countsSEXP);
@@ -74,13 +86,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type zero_gamma(zero_gammaSEXP);
     Rcpp::traits::input_parameter< bool >::type rand_gamma(rand_gammaSEXP);
     Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
-    train_gtm(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh);
+    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
+    train_gtm(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, burnin);
     return R_NilValue;
 END_RCPP
 }
 // infer_topics_cpp
-void infer_topics_cpp(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, double& alpha, int K, int D, int M, arma::mat& n_dk, const arma::mat& phi, int num_threads, int maxiter, bool verbal);
-RcppExport SEXP _SpaTM_infer_topics_cpp(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP MSEXP, SEXP n_dkSEXP, SEXP phiSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP) {
+void infer_topics_cpp(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, double& alpha, int K, int D, int M, arma::mat& n_dk, const arma::mat& phi, int num_threads, int maxiter, bool verbal, int burnin);
+RcppExport SEXP _SpaTM_infer_topics_cpp(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP MSEXP, SEXP n_dkSEXP, SEXP phiSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::sp_mat& >::type counts(countsSEXP);
@@ -95,8 +108,32 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type num_threads(num_threadsSEXP);
     Rcpp::traits::input_parameter< int >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< bool >::type verbal(verbalSEXP);
-    infer_topics_cpp(counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads, maxiter, verbal);
+    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
+    infer_topics_cpp(counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads, maxiter, verbal, burnin);
     return R_NilValue;
+END_RCPP
+}
+// infer_gex_cpp
+List infer_gex_cpp(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, double& alpha, int K, int D, int M, arma::mat& n_dk, const arma::mat& phi, int num_threads, int maxiter, bool verbal, int burnin);
+RcppExport SEXP _SpaTM_infer_gex_cpp(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP MSEXP, SEXP n_dkSEXP, SEXP phiSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP burninSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::sp_mat& >::type counts(countsSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type celltypes(celltypesSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type genes(genesSEXP);
+    Rcpp::traits::input_parameter< double& >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type D(DSEXP);
+    Rcpp::traits::input_parameter< int >::type M(MSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type n_dk(n_dkSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type phi(phiSEXP);
+    Rcpp::traits::input_parameter< int >::type num_threads(num_threadsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxiter(maxiterSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbal(verbalSEXP);
+    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
+    rcpp_result_gen = Rcpp::wrap(infer_gex_cpp(counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads, maxiter, verbal, burnin));
+    return rcpp_result_gen;
 END_RCPP
 }
 // test_RTM_cell
@@ -130,8 +167,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // train_RTM
-arma::vec train_RTM(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, Rcpp::List& nbr_list, const arma::mat& alpha, const arma::mat& beta, int K, int D, arma::mat& n_dk, arma::mat& n_wk, int num_threads, int maxiter, bool verbal, bool zero_gamma, bool rand_gamma, double thresh, double lr, double rho, int loss_fun, bool m_update);
-RcppExport SEXP _SpaTM_train_RTM(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP nbr_listSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP threshSEXP, SEXP lrSEXP, SEXP rhoSEXP, SEXP loss_funSEXP, SEXP m_updateSEXP) {
+arma::vec train_RTM(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, Rcpp::List& nbr_list, const arma::mat& alpha, const arma::mat& beta, int K, int D, arma::mat& n_dk, arma::mat& n_wk, int num_threads, int maxiter, bool verbal, bool zero_gamma, bool rand_gamma, double thresh, double lr, double rho, int loss_fun, bool m_update, int burnin);
+RcppExport SEXP _SpaTM_train_RTM(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP nbr_listSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP threshSEXP, SEXP lrSEXP, SEXP rhoSEXP, SEXP loss_funSEXP, SEXP m_updateSEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -155,7 +192,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< int >::type loss_fun(loss_funSEXP);
     Rcpp::traits::input_parameter< bool >::type m_update(m_updateSEXP);
-    rcpp_result_gen = Rcpp::wrap(train_RTM(counts, celltypes, genes, nbr_list, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, lr, rho, loss_fun, m_update));
+    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
+    rcpp_result_gen = Rcpp::wrap(train_RTM(counts, celltypes, genes, nbr_list, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, lr, rho, loss_fun, m_update, burnin));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -254,41 +292,9 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// mlp_forward
-arma::mat mlp_forward(const arma::mat& X, int layers, Rcpp::List& weights, bool dummy_topic);
-RcppExport SEXP _SpaTM_mlp_forward(SEXP XSEXP, SEXP layersSEXP, SEXP weightsSEXP, SEXP dummy_topicSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< int >::type layers(layersSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List& >::type weights(weightsSEXP);
-    Rcpp::traits::input_parameter< bool >::type dummy_topic(dummy_topicSEXP);
-    rcpp_result_gen = Rcpp::wrap(mlp_forward(X, layers, weights, dummy_topic));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_label_prob
-arma::rowvec get_label_prob(arma::rowvec ndk_row, const arma::rowvec& gamma_weight, int gene_count, int K, int label, int layers, Rcpp::List& weights, bool dummy_topic);
-RcppExport SEXP _SpaTM_get_label_prob(SEXP ndk_rowSEXP, SEXP gamma_weightSEXP, SEXP gene_countSEXP, SEXP KSEXP, SEXP labelSEXP, SEXP layersSEXP, SEXP weightsSEXP, SEXP dummy_topicSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::rowvec >::type ndk_row(ndk_rowSEXP);
-    Rcpp::traits::input_parameter< const arma::rowvec& >::type gamma_weight(gamma_weightSEXP);
-    Rcpp::traits::input_parameter< int >::type gene_count(gene_countSEXP);
-    Rcpp::traits::input_parameter< int >::type K(KSEXP);
-    Rcpp::traits::input_parameter< int >::type label(labelSEXP);
-    Rcpp::traits::input_parameter< int >::type layers(layersSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List& >::type weights(weightsSEXP);
-    Rcpp::traits::input_parameter< bool >::type dummy_topic(dummy_topicSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_label_prob(ndk_row, gamma_weight, gene_count, K, label, layers, weights, dummy_topic));
-    return rcpp_result_gen;
-END_RCPP
-}
 // stm_torch_estep
-double stm_torch_estep(arma::sp_mat& spe_counts, arma::vec& celltypes, arma::vec& genes, const arma::mat& alpha, const arma::mat& beta, int K, int D, bool zero_gamma, bool rand_gamma, arma::vec& labels, arma::mat& n_dk, arma::mat& n_wk, arma::mat& elbo_mat, int layers, Rcpp::List& weights, double& elbo, int num_threads, int iter, bool dummy_topic);
-RcppExport SEXP _SpaTM_stm_torch_estep(SEXP spe_countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP labelsSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP elbo_matSEXP, SEXP layersSEXP, SEXP weightsSEXP, SEXP elboSEXP, SEXP num_threadsSEXP, SEXP iterSEXP, SEXP dummy_topicSEXP) {
+double stm_torch_estep(arma::sp_mat& spe_counts, arma::vec& celltypes, arma::vec& genes, const arma::mat& alpha, const arma::mat& beta, int K, int D, bool zero_gamma, bool rand_gamma, arma::vec& labels, arma::mat& n_dk, arma::mat& n_wk, arma::mat& elbo_mat, int layers, Rcpp::List& weights, double& elbo, int num_threads, int burnin, bool dummy_topic, int cur_iter);
+RcppExport SEXP _SpaTM_stm_torch_estep(SEXP spe_countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP labelsSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP elbo_matSEXP, SEXP layersSEXP, SEXP weightsSEXP, SEXP elboSEXP, SEXP num_threadsSEXP, SEXP burninSEXP, SEXP dummy_topicSEXP, SEXP cur_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -309,31 +315,47 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::List& >::type weights(weightsSEXP);
     Rcpp::traits::input_parameter< double& >::type elbo(elboSEXP);
     Rcpp::traits::input_parameter< int >::type num_threads(num_threadsSEXP);
-    Rcpp::traits::input_parameter< int >::type iter(iterSEXP);
+    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< bool >::type dummy_topic(dummy_topicSEXP);
-    rcpp_result_gen = Rcpp::wrap(stm_torch_estep(spe_counts, celltypes, genes, alpha, beta, K, D, zero_gamma, rand_gamma, labels, n_dk, n_wk, elbo_mat, layers, weights, elbo, num_threads, iter, dummy_topic));
+    Rcpp::traits::input_parameter< int >::type cur_iter(cur_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(stm_torch_estep(spe_counts, celltypes, genes, alpha, beta, K, D, zero_gamma, rand_gamma, labels, n_dk, n_wk, elbo_mat, layers, weights, elbo, num_threads, burnin, dummy_topic, cur_iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_mlp_forward
+arma::mat test_mlp_forward(const arma::mat& X, int layers, Rcpp::List& weights, bool dummy_topic);
+RcppExport SEXP _SpaTM_test_mlp_forward(SEXP XSEXP, SEXP layersSEXP, SEXP weightsSEXP, SEXP dummy_topicSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type layers(layersSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< bool >::type dummy_topic(dummy_topicSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_mlp_forward(X, layers, weights, dummy_topic));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_SpaTM_test_cell_map", (DL_FUNC) &_SpaTM_test_cell_map, 10},
+    {"_SpaTM_BuildDiseaseAlpha", (DL_FUNC) &_SpaTM_BuildDiseaseAlpha, 2},
     {"_SpaTM_get_theta", (DL_FUNC) &_SpaTM_get_theta, 2},
     {"_SpaTM_get_phi", (DL_FUNC) &_SpaTM_get_phi, 2},
-    {"_SpaTM_train_gtm", (DL_FUNC) &_SpaTM_train_gtm, 15},
-    {"_SpaTM_infer_topics_cpp", (DL_FUNC) &_SpaTM_infer_topics_cpp, 12},
+    {"_SpaTM_train_gtm", (DL_FUNC) &_SpaTM_train_gtm, 16},
+    {"_SpaTM_infer_topics_cpp", (DL_FUNC) &_SpaTM_infer_topics_cpp, 13},
+    {"_SpaTM_infer_gex_cpp", (DL_FUNC) &_SpaTM_infer_gex_cpp, 13},
     {"_SpaTM_test_RTM_cell", (DL_FUNC) &_SpaTM_test_RTM_cell, 0},
     {"_SpaTM_test_RTM_cellmap", (DL_FUNC) &_SpaTM_test_RTM_cellmap, 12},
-    {"_SpaTM_train_RTM", (DL_FUNC) &_SpaTM_train_RTM, 20},
+    {"_SpaTM_train_RTM", (DL_FUNC) &_SpaTM_train_RTM, 21},
     {"_SpaTM_nbr_pred", (DL_FUNC) &_SpaTM_nbr_pred, 4},
     {"_SpaTM_get_dist_cpp", (DL_FUNC) &_SpaTM_get_dist_cpp, 1},
     {"_SpaTM_test_stm_cell", (DL_FUNC) &_SpaTM_test_stm_cell, 0},
     {"_SpaTM_test_stm_cellmap", (DL_FUNC) &_SpaTM_test_stm_cellmap, 11},
     {"_SpaTM_train_stm", (DL_FUNC) &_SpaTM_train_stm, 17},
     {"_SpaTM_progress_bar", (DL_FUNC) &_SpaTM_progress_bar, 5},
-    {"_SpaTM_mlp_forward", (DL_FUNC) &_SpaTM_mlp_forward, 4},
-    {"_SpaTM_get_label_prob", (DL_FUNC) &_SpaTM_get_label_prob, 8},
-    {"_SpaTM_stm_torch_estep", (DL_FUNC) &_SpaTM_stm_torch_estep, 19},
+    {"_SpaTM_stm_torch_estep", (DL_FUNC) &_SpaTM_stm_torch_estep, 20},
+    {"_SpaTM_test_mlp_forward", (DL_FUNC) &_SpaTM_test_mlp_forward, 4},
     {NULL, NULL, 0}
 };
 

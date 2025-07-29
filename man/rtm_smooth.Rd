@@ -24,11 +24,3 @@ This function smooths the labels of spots in a spatial experiment object based o
 \details{
 If `k` is provided, the function computes the spatial distance matrix between spots using their array coordinates (`array_row`, `array_col`) and considers the `k` nearest neighbors for smoothing. Otherwise, the function uses a user-provided list of neighbors for each spot.
 }
-\examples{
-# Example 1: Using k-nearest neighbors
-new_labels <- rtm_smooth(spe = spe_object, labels = initial_labels, nbr_list = NULL, k = 5)
-
-# Example 2: Using a pre-computed neighbor list
-new_labels <- rtm_smooth(spe = spe_object, labels = initial_labels, nbr_list = precomputed_nbr_list, k = NULL)
-
-}

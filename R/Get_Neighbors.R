@@ -19,16 +19,6 @@
 #' @return A list where each element corresponds to a spot, and contains its neighboring spots, represented by a matrix with indices and weights.
 #'   If a loss function is used, additional information will be appended to the matrix.
 #'
-#' @examples
-#' # Example 1: Getting neighbors for spots grouped by a specific column
-#' nbr_list <- get_nbrs(spe = spe_object, samples = "sample_id", cell_ids = "cell_id", group_by = "group", dist = 1)
-#'
-#' # Example 2: Getting neighbors without grouping, applying a distance threshold and no loss function
-#' nbr_list <- get_nbrs(spe = spe_object, samples = "sample_id", cell_ids = "cell_id", dist = 1, loss_fun = 0)
-#'
-#' # Example 3: Using a loss function to sample negative neighbors
-#' nbr_list <- get_nbrs(spe = spe_object, samples = "sample_id", cell_ids = "cell_id", loss_fun = 1)
-#'
 #' @import SpatialExperiment
 #' @export
 get_nbrs <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 1){
@@ -98,18 +88,4 @@ get_nbrs <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 1)
     message('Warning. Your current parametrization returned 0 neighbors for all samples. Consider a different distance threshold or grouping by a covariate.')
   }
   return(nbr_list)
-}
-
-
-
-################### Deprecated function - used for debugging get_nbrs
-check_nbr <- function(spe,nbr_set,cell_id,sample_id){
-  spe$nbr <- NA
-  spe$nbr[cell_id] <- 'Cur Cell'
-  spe$nbr[nbr_set[nbr_set[,2] == 1,1] + 1] <- 'NBR'
-  spe$nbr[nbr_set[nbr_set[,2] == 0,1] + 1] <- 'Neg. Sample'
-  spe$nbr <- as.factor(spe$nbr)
-  vis_clus(spe,
-           sample_id,
-           clustervar = 'nbr')
 }

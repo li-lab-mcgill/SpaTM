@@ -1,11 +1,7 @@
 library(testthat)
-library(scuttle)
-library(scater)
-library(scran)
-library(SpaTM)
 library(SpatialExperiment)
-library(Matrix)
-
+library(SpaTM)
+library(bluster)
 #TODO need tests for the helper functions
 
 # Helper function to create a mock SpatialTopicExperiment object
@@ -123,8 +119,7 @@ test_that("rtm_smooth returns correct labels", {
 
 test_that("clust_optim returns correct clustering", {
   ste <- create_test_spatial_topic_experiment()
-  ste <- logNormCounts(ste)
-  ste <- runPCA(ste,ncomponents = 5)
+  reducedDim(ste,'PCA') <- matrix(rnorm(5*ncol(ste)),nrow = ncol(ste),ncol = 5)
   result <- clust_optim(ste, target_clusters = 2, max_iterations = 10, X = 'PCA', k = 4, alg = 'louvain')
 
   # Define expected output based on the clust_optim function's expected behavior

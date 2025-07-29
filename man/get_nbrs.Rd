@@ -32,14 +32,3 @@ This function identifies neighboring spots for each spot in a spatial experiment
 \details{
 If `group_by` is provided, the function selects neighbors from the same sample and group, and may sample neighbors based on spatial proximity. If no `group_by` is given, neighbors are selected within a given distance threshold (`dist`) from the current spot, and optionally modified by a loss function.
 }
-\examples{
-# Example 1: Getting neighbors for spots grouped by a specific column
-nbr_list <- get_nbrs(spe = spe_object, samples = "sample_id", cell_ids = "cell_id", group_by = "group", dist = 1)
-
-# Example 2: Getting neighbors without grouping, applying a distance threshold and no loss function
-nbr_list <- get_nbrs(spe = spe_object, samples = "sample_id", cell_ids = "cell_id", dist = 1, loss_fun = 0)
-
-# Example 3: Using a loss function to sample negative neighbors
-nbr_list <- get_nbrs(spe = spe_object, samples = "sample_id", cell_ids = "cell_id", loss_fun = 1)
-
-}

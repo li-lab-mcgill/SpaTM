@@ -60,19 +60,9 @@ Cell::Cell(int id,arma::mat cellmtx,
   cell_mtx = cellmtx;
   int tokens = cell_mtx.n_rows;
   cell_gamma.resize(tokens,K);
-  // arma::rowvec gamma_k = arma::zeros<arma::rowvec>(k);
   double gamma_init = 1.0/K;
-  // Rcout << gamma_init << std::endl;
-  // Rcout << 1.0/k << std::endl;
-  // Rcout << k << std::endl;
+
   cell_gamma.fill(gamma_init);
-  //Initialize posteriors
-  // for (int i = 0; i < tokens; i++){
-  //   gamma_k =  arma::rowvec(k,(alpha * beta / G_beta));
-  //   gamma_k = gamma_k/sum(gamma_k);
-  //   //sequential par
-  //   cell_gamma.row(i) = gamma_k;
-  // }
 }
 
 void Cell::print() {
@@ -84,11 +74,6 @@ void Cell::print() {
 
 
 
-// Cell::~Cell(){
-//   //cell_id.clear();
-//   cell_mtx.clear();
-//   cell_gamma.clear();
-// }
 //build Cell hash list
 std::unordered_map<int,Cell> build_Cell_Map(arma::sp_mat& counts,
                                             arma::vec& celltypes,
@@ -98,9 +83,13 @@ std::unordered_map<int,Cell> build_Cell_Map(arma::sp_mat& counts,
                                             int D, int K,
                                             bool zero_gamma,
                                             bool rand_gamma = true,
-                                            bool verbal = false){
+                                            bool verbal = false, //deprecated
+                                            int num_threads = 1){
+  //omp_set_num_threads(num_threads);
+
   std::unordered_map<int,Cell> CellMap;
   //int cell_start,cell_end;
+  //#pragma omp parallel for
   for (int i = 0; i < D; i++){
     arma::uvec geneidx = arma::find(counts.col(i));
     arma::mat mtx(geneidx.n_elem,3);
@@ -108,20 +97,7 @@ std::unordered_map<int,Cell> build_Cell_Map(arma::sp_mat& counts,
     mtx.col(0) = arma::nonzeros(counts.col(i));//counts(nonzero_counts);
     mtx.col(1).fill(celltypes(i));
     mtx.col(2) = genes(geneidx);
-    if (verbal){
-      if ( i == 10000){
-        Rcout << i << " Cells Processed" << std::endl;
-      }
-      else if ( i == 50000){
-        Rcout << i << " Cells Processed" << std::endl;
-      }
-      else if (i == 100000){
-        Rcout << i << " Cells Processed" << std::endl;
-      }
-      else if (i == 150000){
-        Rcout << i << " Cells Processed" << std::endl;
-      }
-    }
+
     CellMap[i+1] = Cell(i+1,mtx,alpha,beta,K,
                         zero_gamma,
                         rand_gamma);

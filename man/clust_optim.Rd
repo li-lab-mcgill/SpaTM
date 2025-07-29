@@ -39,11 +39,3 @@ This function performs clustering optimization by adjusting the resolution param
 \details{
 The function uses an adjacency matrix to construct a graph and performs clustering on the reduced-dimensional representation of the spatial experiment object. The algorithm used for clustering is Louvain by default, but other algorithms can be specified.
 }
-\examples{
-# Example 1: Optimizing clustering to target 10 clusters
-result <- clust_optim(spe = spe_object, target_clusters = 10)
-
-# Example 2: Using a different clustering algorithm
-result <- clust_optim(spe = spe_object, target_clusters = 10, alg = 'leiden')
-
-}

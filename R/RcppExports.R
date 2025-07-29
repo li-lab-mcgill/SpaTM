@@ -5,6 +5,24 @@ test_cell_map <- function(counts, celltypes, genes, alpha, beta, D, K, zero_gamm
     invisible(.Call(`_SpaTM_test_cell_map`, counts, celltypes, genes, alpha, beta, D, K, zero_gamma, rand_gamma, cellid))
 }
 
+#' @title Build Disease-informed alpha priors
+#' @description updates the initialized label-guided alpha prior matrix to include disease information. We assume that most cells from healthy patients are healthy and that there is an equal chance of a cell from a diseased patient representing a healthy or diseased state.
+#' @param a A numeric matrix representing the original alpha priors.
+#' @param disease An unsigned integer vector indicating disease presence (1) or absence (0) for each row.
+#' @return A numeric matrix with adjusted alpha values. Rows are modified based on the corresponding disease indicator:
+#' - If `disease[cur] == 1`, the row is element-wise multiplied by {0.5, 0.5}.
+#' - If `disease[cur] == 0`, the row is element-wise multiplied by {0.9, 0.1}.
+#' @examples
+#' \dontrun{
+#' a <- matrix(c(1, 2, 3, 4), nrow = 2, byrow = TRUE)
+#' disease <- c(1, 0)
+#' BuildDiseaseAlpha(a, disease)
+#' }
+#' @export
+BuildDiseaseAlpha <- function(a, disease) {
+    .Call(`_SpaTM_BuildDiseaseAlpha`, a, disease)
+}
+
 get_theta <- function(n_dk, alpha) {
     .Call(`_SpaTM_get_theta`, n_dk, alpha)
 }
@@ -13,12 +31,16 @@ get_phi <- function(n_wk, beta) {
     .Call(`_SpaTM_get_phi`, n_wk, beta)
 }
 
-train_gtm <- function(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0) {
-    invisible(.Call(`_SpaTM_train_gtm`, counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh))
+train_gtm <- function(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0.00001, burnin = 1L) {
+    invisible(.Call(`_SpaTM_train_gtm`, counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, burnin))
 }
 
-infer_topics_cpp <- function(counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads = 1L, maxiter = 100L, verbal = TRUE) {
-    invisible(.Call(`_SpaTM_infer_topics_cpp`, counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads, maxiter, verbal))
+infer_topics_cpp <- function(counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads = 1L, maxiter = 100L, verbal = TRUE, burnin = 1L) {
+    invisible(.Call(`_SpaTM_infer_topics_cpp`, counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads, maxiter, verbal, burnin))
+}
+
+infer_gex_cpp <- function(counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads = 1L, maxiter = 100L, verbal = TRUE, burnin = 1L) {
+    .Call(`_SpaTM_infer_gex_cpp`, counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads, maxiter, verbal, burnin)
 }
 
 test_RTM_cell <- function() {
@@ -29,8 +51,8 @@ test_RTM_cellmap <- function(counts, celltypes, genes, alpha, beta, D, K, zero_g
     invisible(.Call(`_SpaTM_test_RTM_cellmap`, counts, celltypes, genes, alpha, beta, D, K, zero_gamma, rand_gamma, nbr_list, print_cell, loss_fun))
 }
 
-train_RTM <- function(counts, celltypes, genes, nbr_list, alpha, beta, K, D, n_dk, n_wk, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0.00001, lr = 0.001, rho = 1000.0, loss_fun = 0L, m_update = TRUE) {
-    .Call(`_SpaTM_train_RTM`, counts, celltypes, genes, nbr_list, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, lr, rho, loss_fun, m_update)
+train_RTM <- function(counts, celltypes, genes, nbr_list, alpha, beta, K, D, n_dk, n_wk, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0.00001, lr = 0.001, rho = 1000.0, loss_fun = 0L, m_update = TRUE, burnin = 1L) {
+    .Call(`_SpaTM_train_RTM`, counts, celltypes, genes, nbr_list, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, lr, rho, loss_fun, m_update, burnin)
 }
 
 nbr_pred <- function(theta, weights, max_val = 1, loss_fun = 0L) {
@@ -57,15 +79,11 @@ progress_bar <- function(iter, maxiter, elbo, train_acc, val_acc) {
     invisible(.Call(`_SpaTM_progress_bar`, iter, maxiter, elbo, train_acc, val_acc))
 }
 
-mlp_forward <- function(X, layers, weights, dummy_topic = FALSE) {
-    .Call(`_SpaTM_mlp_forward`, X, layers, weights, dummy_topic)
+stm_torch_estep <- function(spe_counts, celltypes, genes, alpha, beta, K, D, zero_gamma, rand_gamma, labels, n_dk, n_wk, elbo_mat, layers, weights, elbo, num_threads = 1L, burnin = 0L, dummy_topic = FALSE, cur_iter = 0L) {
+    .Call(`_SpaTM_stm_torch_estep`, spe_counts, celltypes, genes, alpha, beta, K, D, zero_gamma, rand_gamma, labels, n_dk, n_wk, elbo_mat, layers, weights, elbo, num_threads, burnin, dummy_topic, cur_iter)
 }
 
-get_label_prob <- function(ndk_row, gamma_weight, gene_count, K, label, layers, weights, dummy_topic = FALSE) {
-    .Call(`_SpaTM_get_label_prob`, ndk_row, gamma_weight, gene_count, K, label, layers, weights, dummy_topic)
-}
-
-stm_torch_estep <- function(spe_counts, celltypes, genes, alpha, beta, K, D, zero_gamma, rand_gamma, labels, n_dk, n_wk, elbo_mat, layers, weights, elbo, num_threads = 1L, iter = 0L, dummy_topic = FALSE) {
-    .Call(`_SpaTM_stm_torch_estep`, spe_counts, celltypes, genes, alpha, beta, K, D, zero_gamma, rand_gamma, labels, n_dk, n_wk, elbo_mat, layers, weights, elbo, num_threads, iter, dummy_topic)
+test_mlp_forward <- function(X, layers, weights, dummy_topic = FALSE) {
+    .Call(`_SpaTM_test_mlp_forward`, X, layers, weights, dummy_topic)
 }
 

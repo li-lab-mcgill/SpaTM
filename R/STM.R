@@ -21,14 +21,18 @@
 #'   - `nn_softmax`: Softmax activation function applied to the output layer.
 #'
 #' @examples
-#' # Example 1: Build a 1-hidden-layer MLP with 100 input features, 50 hidden units, and 10 output units.
+#' # Example 1: Build a 1-hidden-layer MLP with 100 input features
+#' # 50 hidden units, and 10 output units.
 #' mlp_model <- build_mlp(layers = 1, d_in = 100, d_hidden = 50, d_out = 10)
 #'
-#' # Example 2: Build a 2-hidden-layer MLP with 100 input features, 64 and 32 hidden units, and 10 output units.
-#' mlp_model <- build_mlp(layers = 2, d_in = 100, d_hidden = c(64, 32), d_out = 10)
+#' # Example 2: Build a 2-hidden-layer MLP with 100 input features,
+#' # 64 and 32 hidden units, and 10 output units.
+#' mlp_model <- build_mlp(layers = 2, d_in = 100,
+#'  d_hidden = c(64, 32), d_out = 10)
 #'
 #' # Example 3: Build a 3-hidden-layer MLP with a dummy topic.
-#' mlp_model <- build_mlp(layers = 3, d_in = 100, d_hidden = c(64, 32, 16), d_out = 10, dummy_topic = TRUE)
+#' mlp_model <- build_mlp(layers = 3, d_in = 100,
+#' d_hidden = c(64, 32, 16), d_out = 10, dummy_topic = TRUE)
 #'
 #' @import torch
 #' @export
@@ -82,6 +86,15 @@ build_mlp <- function(layers = 1,d_in,d_hidden,d_out,device = NULL,
   return(mlp)
 }
 
+#' MLP Data Dataset
+#'
+#' This function defines a dataset for the MLP model, including methods for initialization, getting batches, and getting the length of the dataset.
+#'
+#' @param x A tensor representing the input data.
+#' @param y A tensor representing the target data.
+#'
+#' @return A dataset object for the MLP model.
+#'
 #' @import torch
 #' @export
 mlp_data <- dataset(
@@ -104,8 +117,22 @@ mlp_data <- dataset(
 
 
 
+
 # Define fitting function
+#' Fit MLP Model
+#'
+#' This function trains a multi-layer perceptron (MLP) model using the provided training data loader, learning rate, maximum number of epochs, and class proportions.
+#'
+#' @param mlp An MLP model (of class `nn_module`).
+#' @param train_dl A data loader for the training data.
+#' @param lr Learning rate for the optimizer.
+#' @param max_epoch Maximum number of epochs for training.
+#' @param class_prop Class proportions for weighting the loss function.
+#'
+#' @return The trained MLP model.
+#'
 #' @import torch
+#' @importFrom coro loop
 #' @export
 fit_mlp <- function(mlp, train_dl, lr, max_epoch,class_prop) {
   if (!requireNamespace("torch", quietly = TRUE)) {
@@ -142,6 +169,17 @@ fit_mlp <- function(mlp, train_dl, lr, max_epoch,class_prop) {
 
 
 ## TODO Add GLM Prediction function
+#' Predict with MLP Model
+#'
+#' This function generates predictions using a trained multi-layer perceptron (MLP) model and the provided input data.
+#'
+#' @param mlp A trained MLP model (of class `nn_module`).
+#' @param x A matrix representing the input data.
+#' @param device The device on which to run the model. Defaults to `"cpu"`.
+#' @param dummy_topic Logical indicating whether to include a dummy topic in the input (default is `FALSE`).
+#'
+#' @return A vector of predicted class labels.
+#'
 #' @import torch
 #' @export
 pred_mlp <- function(mlp,
@@ -181,24 +219,23 @@ pred_mlp <- function(mlp,
 #' @param spe_val A validation set used for monitoring overfitting in SpaTM-S.
 #' @param device The device for training (e.g., "cpu" or "cuda") when using SpaTM-S. If `NULL`, the default device is used. Note that we are still working on reliably GPU enabling the code.
 #' @param balanced_class Logical indicating whether to balance the class distribution during model training (default is `TRUE`).
+#' @param burnin Maximum number of iterations to run during the STM LDA step for each sample (default is 0)
 #' @param dummy_topic Logical indicating whether to add a dummy topic for regularization (default is `FALSE`).
 #'
 #' @return The trained MLP model (of class `nn_module`).
 #'
 #' @seealso \link{STM}
 #'
-#' @examples
-#' # Example: Running Torch-STM with MLP model.
-#' spe_result <- STM_Torch(spe = spe_object, labels = labels, mlp = my_mlp_model, mlp_layers = c(64, 32), spe_val = spe_validation)
-#'
-#' @import torch dplyr
+#' @import torch dplyr SingleCellExperiment
 #' @export
 STM_Torch <- function(spe,
                       labels,
                       num_threads = 1L,
-                      maxiter = 100L, verbal = TRUE,
+                      maxiter = 100L,
+                      verbal = TRUE,
                       zero_gamma = TRUE,
-                      rand_gamma = FALSE, thresh = 0.00001,
+                      rand_gamma = FALSE,
+                      thresh = 0.00001,
                       lr = 0.0001,
                       mlp,
                       mlp_layers,
@@ -206,6 +243,7 @@ STM_Torch <- function(spe,
                       spe_val,
                       device = torch_device('cpu'),
                       balanced_class = TRUE,
+                      burnin = 1,
                       dummy_topic = FALSE){
   elbo_mat <- matrix(0,maxiter,5)
   old_elbo <- -9999999
@@ -217,10 +255,8 @@ STM_Torch <- function(spe,
 
   acc_mat <- matrix(0,maxiter,2)
   for(i in 1:maxiter){
-    #print(paste("Iteration: ",i))
-    #saveRDS(list(mlp = mlp,spe = spe),'cur_model_output.rds')
     mlp_parameters <- lapply(mlp$parameters,function(a){
-      t(as.matrix(a$cpu()))})
+      t(as.matrix(a))})
     cur_elbo <- stm_torch_estep(counts(spe),
                                 spe$int_cell,
                                 rowData(spe)$gene_ints,
@@ -238,8 +274,9 @@ STM_Torch <- function(spe,
                                 mlp_parameters,
                                 cur_elbo,
                                 num_threads,
-                                i-1,
-                                dummy_topic) ##Added dummy topic
+                                burnin,
+                                dummy_topic,
+                                i-1) ##Added dummy topic
 
     #Calc N_mean
     #M STEP
@@ -277,11 +314,11 @@ STM_Torch <- function(spe,
 
 
     elbo_mat[i,5] <- -ce_loss/ncol(counts(spe))
-    # if (abs(cur_elbo - old_elbo) <= thresh & i < maxiter){
-    #   mlp <- fit_mlp(mlp,train_dl,lr,3000,class_prop)
-    #   print("ELBO converged early")
-    #   break
-    # }
+    if (dif <= thresh & i < maxiter){
+      mlp <- fit_mlp(mlp,train_dl,1e-5,3000,class_prop)
+      if (verbal){print("ELBO converged early")}
+      break
+    }
     old_elbo <- cur_elbo
     #print(cur_elbo)
     elbo_mat[i,4] <- cur_elbo
@@ -300,7 +337,6 @@ STM_Torch <- function(spe,
 
     train_acc <- length(which(train_pred == as.numeric(spe$spatialLIBD)))*
       100/ncol(spe)
-    #print(paste("train Acc: ",train_acc, sep = ''))
 
     ###
     spe_val <- inferTopics(spe_val,1,100,verbal = FALSE,phi(spe))
@@ -311,19 +347,11 @@ STM_Torch <- function(spe,
 
     val_acc <- length(which(val_pred == as.numeric(spe_val$spatialLIBD)))*
       100/ncol(spe_val)
-    #print(paste("Val Acc: ",val_acc, sep = ''))
 
     acc_mat[i,] <- c(train_acc,val_acc)
     if (verbal){ progress_bar(i,maxiter,elbo_mat[i,4],train_acc,val_acc)}
-    if (dif < 0.0000000001){
-      #write.csv(acc_mat,'debug_acc.csv')
-      #write.csv(elbo_mat,'debug_elbo.csv')
-      #TODO Find a nicer way to do the below segment
-      return(mlp)
-    }
+
   }
-  #write.csv(acc_mat,'debug_acc.csv')
-  #write.csv(elbo_mat,'debug_elbo.csv')
   #TODO Find a nicer way to do the below segment
   return(mlp)
 
@@ -347,14 +375,11 @@ STM_Torch <- function(spe,
 #' @param mlp_layers A vector specifying the number of units in each layer of the MLP.
 #' @param mlp_epoch The number of epochs for training the MLP during the burn-in phase.
 #' @param spe_val A validation set.
+#' @param burnin Maximum number of iterations to run during the STM LDA step for each sample (default is 0)
 #'
 #' @seealso \link{STM}
 #'
-#' @examples
-#' # Example: Running the burn-in phase for Torch-STM with MLP model
-#' STM_Torch_burnin(spe = spe_object, labels = labels, mlp = my_mlp_model, mlp_layers = c(64, 32), spe_val = spe_validation)
-#'
-#' @import torch dplyr
+#' @import torch dplyr SingleCellExperiment
 #' @export
 STM_Torch_burnin <- function(spe,
                              labels,
@@ -366,19 +391,16 @@ STM_Torch_burnin <- function(spe,
                              mlp,
                              mlp_layers,
                              mlp_epoch = 1000,
-                             spe_val){
+                             spe_val,
+                             burnin = 1){
 
   old_elbo <- -9999999
   cur_elbo <- 0
   elbo_mat <- matrix(0,maxiter,5)
-  tensor_labels <- torch_tensor(labels + 1,requires_grad = TRUE) %>%
-    torch_squeeze()
-  tensor_labels <- tensor_labels$to(dtype = torch_long())
   K <- ncol(alphaPrior(spe))
-  acc_mat <- matrix(0,maxiter,2)
+  mlp_parameters <- lapply(mlp$parameters,function(a){
+    t(as.matrix(a))})
   for(i in 1:maxiter){
-    mlp_parameters <- lapply(mlp$parameters,function(a){
-      t(as.matrix(a$cpu()))})
     cur_elbo <- stm_torch_estep(counts(spe),
                                 spe$int_cell,
                                 rowData(spe)$gene_ints,
@@ -396,8 +418,10 @@ STM_Torch_burnin <- function(spe,
                                 mlp_parameters,
                                 cur_elbo,
                                 num_threads,
-                                i-1)
+                                burnin,
+                                cur_iter = i-1)
   }
+  return(spe)
 }
 
 
@@ -417,6 +441,7 @@ STM_Torch_burnin <- function(spe,
 #' The function supports various parameters for training, including regularization, optimization settings, and the option for a validation set to prevent overfitting in the Torch-STM mode.
 #'
 #' @param spe A spatial experiment object (typically of class `SummarizedExperiment`) containing spatial transcriptomics data, including counts, metadata, and gene information.
+#' @param label a character representing the column in colData(spe) with the class labels
 #' @param num_threads Number of threads to use for parallel computation (default is 1).
 #' @param maxiter Maximum number of iterations for model training (default is 100).
 #' @param verbal Logical indicating whether to display progress messages (default is `TRUE`).
@@ -431,20 +456,15 @@ STM_Torch_burnin <- function(spe,
 #' @param device The device for training (e.g., "cpu" or "cuda") when using Torch-STM. If `NULL`, the default device is used.
 #' @param balanced_class Logical indicating whether to balance the class distribution during model training (default is `TRUE`).
 #' @param dummy_topic Logical indicating whether to add a dummy topic for regularization (default is `FALSE`).
-#' @param burnin Number of iterations for burn-in phase in Torch-STM (default is 5).
+#' @param burnin_lda Number of iterations for burn-in phase in Torch-STM (default is 5).
+#' @param burnin Maximum number of iterations to run during the STM LDA step for each sample (default is 0)
 #'
 #' @return The input spatial experiment object (`spe`) with updated metadata containing the STM model results:
 #'   - `STM_Weights`: A matrix of learned topic weights (GLM-STM).
 #'   - `STM_MLP`: The trained MLP model (Torch-STM).
 #'
-#' @examples
-#' # Example 1: Running GLM-STM with default settings
-#' spe_result <- STM(spe = spe_object)
-#'
-#' # Example 2: Running Torch-STM with MLP model
-#' spe_result <- STM(spe = spe_object, mlp = my_mlp_model, mlp_layers = c(64, 32), spe_val = spe_validation)
-#'
-#' @import torch dplyr
+#' @import torch dplyr SingleCellExperiment methods
+#' @importFrom S4Vectors metadata
 #' @export
 STM <- function(spe,
                 label = NULL,
@@ -460,19 +480,19 @@ STM <- function(spe,
                       device = NULL,
                       balanced_class = TRUE,
                       dummy_topic = FALSE,
-                      burnin = 5){
+                      burnin_lda = 5,
+                      burnin = 100){
   if (!is(spe,'TopicExperiment')){
     stop('This function requires a TopicExperiment object to run correctly. Please create a Spatial or SingleCell variant before using the RTM function.')
   }
   if (is.null(label)){
-    stop('You need to specify the column name in spe that contains the classes you want predicted.')
-  } else{
-    if(!is.numeric(colData(spe)[,label])){
+    stop('You need to specify the column name in the TopicExperiment that contains the classes you want predicted.')
+  } else if(!is.numeric(colData(spe)[,label])){
       if(!is.factor(colData(spe)[,label]) ){
         colData(spe)[,label] <- as.factor(colData(spe)[,label])
       }
       colData(spe)[,label] <- as.numeric(colData(spe)[,label]) - 1
-    }
+
   }
   #Create numeric indexing for Rcpp
 
@@ -510,24 +530,27 @@ STM <- function(spe,
     if (!requireNamespace("torch", quietly = TRUE)) {
       stop('You do not have torch installed. Please install it before trying to use the STM-Torch workflow')
     }
-    STM_Torch_burnin(spe_train,
-                     colData(spe)[,label],
-                     num_threads,
-                     burnin,
-                     verbal,
-                     zero_gamma,
-                     rand_gamma,
-                     thresh,
-                     lr,
-                     mlp,
-                     mlp_layers,
-                     mlp_epoch = 0,
-                     spe_val)
+    if (burnin > 0){
+      spe <- STM_Torch_burnin(spe,
+                               colData(spe)[,label],
+                               num_threads,
+                               burnin_lda,
+                               verbal,
+                               zero_gamma,
+                               rand_gamma,
+                               thresh,
+                               lr,
+                               mlp,
+                               mlp_layers,
+                               mlp_epoch = 0,
+                               spe_val)
+    }
 
-    metadata(spe)[['STM_MLP']] <- STM_Torch(spe_train,
+    metadata(spe)[['STM_MLP']] <- STM_Torch(spe,
                                             colData(spe)[,label],
                                             num_threads,
                                             maxiter,
+                                            verbal,
                                             zero_gamma,
                                             rand_gamma,
                                             thresh,
@@ -535,8 +558,38 @@ STM <- function(spe,
                                             mlp,
                                             mlp_layers,
                                             mlp_epoch,
-                                            spe_val)
+                                            spe_val,
+                                            balanced_class = balanced_class,
+                                            burnin = burnin)
     return(spe)
   }
 
+}
+
+
+
+
+#' Testthat MLP forward pass helper function
+#'
+#' This helper function is only used in the testing suite to test the Rcpp forward pass
+#'
+#' The function supports various parameters for training, including regularization, optimization settings, and the option for a validation set to prevent overfitting in the Torch-STM mode.
+#'
+#' @param theta_mat input feature matrix
+#' @param mlp_layers number of MLP hidden layers
+#' @param mlp_parameters list of MLP parameters
+#' @param dummy_topic boolean for whether to use dummy topic in model or not
+#'
+#' @return outputs from the Rcpp forward pass implementation
+#'
+#' @import torch
+#' @export
+test_mlp <- function(theta_mat,
+                     mlp_layers,
+                     mlp_parameters,
+                     dummy_topic = FALSE){
+  test_mlp_forward(theta_mat,
+                   mlp_layers,
+                   mlp_parameters,
+                   dummy_topic)
 }

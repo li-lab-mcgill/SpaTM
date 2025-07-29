@@ -84,16 +84,24 @@ test_that("pred_mlp returns correct predictions", {
   expect_equal(length(predictions), 1000, info = "Predictions should have the same length as input data")
 })
 
-test_that("STM_Torch returns expected results for valid input", {
+test_that("STM returns expected results for valid input", {
   ste <- create_test_spatial_topic_experiment()
   K <- ncol(alphaPrior(ste))
   classes <- length(unique(ste$label))
   mlp <- build_mlp(layers = 1, d_in = K, d_hidden = 50, d_out = classes)
   ste$label <- as.numeric(as.factor(ste$label)) -1
-  result <- STM_Torch(ste, ste$label,num_threads = 1, maxiter = 5, verbal = FALSE, mlp = mlp, mlp_layers = c(50), mlp_epoch = 1, spe_val = ste, device = torch_device('cpu'))
-
+  ste <- STM(ste,'label',
+             num_threads = 1,
+             maxiter = 5,
+             verbal = FALSE,
+             mlp = mlp,
+             mlp_layers = 1,
+             mlp_epoch = 1,
+             spe_val = ste,
+             device = torch_device('cpu'),
+             burnin = 1)
   # Define expected output based on the STM_Torch function's expected behavior
-  expect_true(inherits(result, "nn_module"), info = "Result should be an nn_module")
+  expect_true(inherits(metadata(ste)[['STM_MLP']], "nn_module"), info = "Result should be an nn_module")
 })
 
 
@@ -103,29 +111,43 @@ test_that("STM_Torch_burnin runs without errors", {
   labels <- sample(0:1, ncol(spe), replace = TRUE)
   mlp <- build_mlp(layers = 1, d_in = ncol(alphaPrior(spe)), d_hidden = 50, d_out = 2)
   spe_val <- create_test_spatial_topic_experiment()
-  expect_silent(STM_Torch_burnin(spe, labels, num_threads = 1, maxiter = 5, verbal = FALSE, zero_gamma = TRUE, rand_gamma = FALSE, thresh = 0.00001, lr = 0.001, mlp = mlp, mlp_layers = c(50), mlp_epoch = 1, spe_val = spe_val))
+  expect_silent(STM_Torch_burnin(spe, labels, num_threads = 1, maxiter = 5, verbal = FALSE, zero_gamma = TRUE, rand_gamma = FALSE, thresh = 0.00001, lr = 0.001, mlp = mlp, mlp_layers = 1, mlp_epoch = 1, spe_val = spe_val))
 })
 
-test_that("Rcpp forward pass provides reasonable estimator for torch MLP",{
-  mlp <- build_mlp(layers = 2, d_in = 10, d_hidden = c(64,32), d_out = 10)
-  mlp$to(dtype  = torch_float64())
-  x <- torch_randn(3000, 10,dtype = torch_float64())
-  x_mat <- as.matrix(x)
-  mlp_out <- as.matrix(mlp(x))
-  mlp_parameters <- lapply(mlp$parameters,function(a){
-    t(as.matrix(a$cpu()))})
-  mlp_out_rcpp <- mlp_forward(x_mat,
-                              2,
-                              mlp_parameters)
-  expect_true(cor(as.vector(mlp_out),as.vector(mlp_out_rcpp)) > 0.5)
+test_that("Rcpp forward pass matches torch forward pass",{
+  layers <- c(0,1,2,3)
+  h_dims <- list(NULL,
+                 64,
+                 c(64,32),
+                 c(64,32,16))
+  for (i in 1:length(layers)){
+    mlp <- build_mlp(layers = layers[i], d_in = 10, d_hidden = h_dims[[i]], d_out = 10)
+    mlp$to(dtype = torch_float64())
+    x_mat <- matrix(runif(30000),ncol = 10,nrow = 3000)
+    x <- torch_tensor(x_mat,dtype = torch_float64())
+    mlp_out <- as.matrix(mlp(x))
+    mlp_parameters <- lapply(mlp$parameters,function(a){
+      t(as.matrix(a))})
+    mlp_out_rcpp <- test_mlp(x_mat,
+                             layers[i],
+                             mlp_parameters)
+    expect_true(all.equal(as.vector(mlp_out),as.vector(mlp_out_rcpp)))
+  }
 })
+
+
+
+
 
 
 test_that("progress_bar prints the correct output", {
   # Capture the console output
-  output <- capture.output(progress_bar(100, 100, -1234.56, 85.0, 90.0))
+  output <- capture.output(SpaTM:::progress_bar(100, 100, -1234.56, 85.0, 90.0))
 
   expected_output <- "[==================================================] 100% || Iter: 100 || Train: 85 || Val: 90 || ELBO: -1234.56 \r"
   # Compare the outputs
   expect_equal(output, expected_output)
 })
+
+
+

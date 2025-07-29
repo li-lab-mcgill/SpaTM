@@ -203,64 +203,69 @@ void run_stm_epoch(std::unordered_map<int,STM_Cell>& STM_CellMap,
     ndk_id = i-1; //To accomodate row indices for matrix
     int tokens = m.n_rows;
     cur_ndk = n_dk.row(ndk_id);
-
-    for (int token = 0; token < tokens; token++){
-
-
-      counts = m(token,0);
-      gene = m(token,2)-1;
-      cur_counts = cur_gamma.row(token)*counts; //TODO
-
-
-      label_post = get_label_prob(cur_ndk,cur_gamma.row(token),
-                                  model_weights,counts,K,
-                                  STM_CellMap[i].cell_label);
-
-      gamma_k = (alpha.row(ndk_id) + n_dk.row(ndk_id) - cur_counts) %
-        ((beta.row(gene)+n_wk.row(gene)- cur_counts) /
-          (beta_sum+nwk_sum- cur_counts)) %
-            label_post;
+    double diff = 1;
+    int max_update = 100;
+    int u = 0;
+    while (diff > 0.01 && u < max_update){
+      u++;
+      for (int token = 0; token < tokens; token++){
 
 
-      gamma_k = gamma_k/sum(gamma_k);
-      //sequential par
-      if (arma::any(gamma_k < 0)){
-        gamma_k = (alpha.row(ndk_id) + n_dk.row(ndk_id)) % (beta.row(gene)+
-          n_wk.row(gene)) /
-            (beta_sum+nwk_sum) %
+        counts = m(token,0);
+        gene = m(token,2)-1;
+        cur_counts = cur_gamma.row(token)*counts; //TODO
+
+
+        label_post = get_label_prob(cur_ndk,cur_gamma.row(token),
+                                    model_weights,counts,K,
+                                    STM_CellMap[i].cell_label);
+
+        gamma_k = (alpha.row(ndk_id) + n_dk.row(ndk_id) - cur_counts) %
+          ((beta.row(gene)+n_wk.row(gene)- cur_counts) /
+            (beta_sum+nwk_sum- cur_counts)) %
               label_post;
+
+
+        gamma_k = gamma_k/sum(gamma_k);
+        //sequential par
+        if (arma::any(gamma_k < 0)){
+          gamma_k = (alpha.row(ndk_id) + n_dk.row(ndk_id)) % (beta.row(gene)+
+            n_wk.row(gene)) /
+              (beta_sum+nwk_sum) %
+                label_post;
+        }
+
+        if (gamma_k.has_nan()){
+          Rcout << "Cell: " << i  << std::endl;
+          Rcout << "token : " << token << std::endl;
+          Rcout << "current gamma: " << gamma_k << std::endl;
+          stop("Variational Estimates contain NAN");
+        }
+
+        cur_gamma.row(token) = gamma_k; //TODO
+
+        if (n_wk.has_nan()){
+          Rcout << "Cell: " << i  << std::endl;
+          Rcout << "token : " << token << std::endl;
+          Rcout << "NWK: " << n_wk.row(gene) << std::endl;
+          stop("NWK Estimates contain NAN");
+        }
+
+        if (n_dk.has_nan()){
+          Rcout << "Cell: " << i  << std::endl;
+          Rcout << "token : " << token << std::endl;
+          Rcout << "NDK: " << n_dk.row(ndk_id) << std::endl;
+          stop("NDK Estimates contain NAN");
+        }
+
+      }
+      n_dk.row(ndk_id).zeros();
+      for (int token = 0; token < tokens; token++){ //TODO vectorise
+        n_dk.row(ndk_id) += cur_gamma.row(token)*m(token,0);
       }
 
-      if (gamma_k.has_nan()){
-        Rcout << "Cell: " << i  << std::endl;
-        Rcout << "token : " << token << std::endl;
-        Rcout << "current gamma: " << gamma_k << std::endl;
-        stop("Variational Estimates contain NAN");
-      }
-
-      cur_gamma.row(token) = gamma_k; //TODO
-
-      //update params
-
-      // n_wk.row(gene) += (gamma_k * counts); // NOTE: this line is moved inside the critical block
-      //
-      // n_dk.row(ndk_id) += (gamma_k * counts) - cur_counts ;
-      // nwk_sum += (gamma_k * counts);
-
-      if (n_wk.has_nan()){
-        Rcout << "Cell: " << i  << std::endl;
-        Rcout << "token : " << token << std::endl;
-        Rcout << "NWK: " << n_wk.row(gene) << std::endl;
-        stop("NWK Estimates contain NAN");
-      }
-
-      if (n_dk.has_nan()){
-        Rcout << "Cell: " << i  << std::endl;
-        Rcout << "token : " << token << std::endl;
-        Rcout << "NDK: " << n_dk.row(ndk_id) << std::endl;
-        stop("NDK Estimates contain NAN");
-      }
-
+      diff = abs(arma::accu(cur_ndk - n_dk.row(ndk_id)));
+      cur_ndk = n_dk.row(ndk_id);
     }
     STM_CellMap[i].cell_gamma = cur_gamma; //TODO
 
@@ -328,24 +333,18 @@ double get_stm_ELBO(std::unordered_map<int,STM_Cell>& STM_CellMap,
   ELBO_theta += (lgamma(arma::accu(alpha)) - arma::accu(lgamma(alpha)));
   for (int i = 0; i < D; i++){
     theta_denom = lgamma(arma::sum(alpha.row(i)) + arma::sum(n_dk.row(i)));
-    for (int j = 0; j < K; j++){
-      ELBO_theta += (lgamma(alpha(i,j) + n_dk(i,j))) - theta_denom;
-    }
+    ELBO_theta += arma::sum(lgamma(alpha.row(i) + n_dk.row(i))) - theta_denom;
   }
 
   // ELBO phi
   ELBO_phi_prior += (lgamma(arma::accu(beta)) - arma::accu(lgamma(beta)));
 
-  for (int j = 0; j < M; j++){
-    ELBO_phi_like += arma::accu(lgamma(beta.row(j) + n_wk.row(j)));
-  }
-  for (int j = 0; j < M; j++){
-    //for (int i = 0; i < K; i++){
-      ELBO_phi_norm += lgamma(arma::sum(beta.row(j)) + arma::sum(n_wk.row(j)));
-    //}
+  for (int j = 0; j < K; j++){
+    ELBO_phi_like += arma::accu(lgamma(beta.col(j) + n_wk.col(j)));
+    ELBO_phi_norm += lgamma(arma::sum(beta.col(j)) + arma::sum(n_wk.col(j)));
   }
 
-  ELBO_phi = (K*ELBO_phi_prior + ELBO_phi_like - ELBO_phi_norm);
+  ELBO_phi = (ELBO_phi_prior + ELBO_phi_like - ELBO_phi_norm);
 
   // ELBO gamma
   for (int cell = 1; cell <= D; cell++){
@@ -498,5 +497,6 @@ arma::mat train_stm(arma::sp_mat& counts,
     Rcout << "] " << "100% || Iter: " << maxiter << " || CE: "<< ce_loss << " || ELBO: "<< cur_elbo << std::endl;
     Rcout << "Max Iteration Reached" << std::endl;
   }
+  STM_CellMap.clear();
   return model_weights;
 }

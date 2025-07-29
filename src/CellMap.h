@@ -41,7 +41,9 @@ std::unordered_map<int,Cell> build_Cell_Map(arma::sp_mat& counts,
                                             int D, int K,
                                             bool zero_gamma,
                                             bool rand_gamma,
-                                            bool verbal);
+                                            bool verbal,
+                                            int num_threads);
+
 std::unordered_map<int,Cell> build_Predict_Cell_Map(arma::sp_mat& counts,
                                                     arma::vec& celltypes,
                                                     arma::vec& genes,
