@@ -2,8 +2,6 @@
 
 export(BuildDiseaseAlpha)
 export(GTM)
-export(Orig_STM)
-export(Orig_STM_burnin)
 export(RTM)
 export(STM)
 export(STM_Torch)
