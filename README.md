@@ -7,7 +7,7 @@ This repository contains the R package for the Spatial Topic Model we have devel
 - Cell type Deconvolution (with or without a reference single cell dataset)
 - Impute spatial information in single cell atlases
 
-Our manuscript pre-print detailing the method's performance and analyses [can be found here](https://www.biorxiv.org/content/10.1101/2025.01.24.634726v1). The analysis scripts used to generate the results found in the manuscript (using [version 0.2 of SpaTM](https://github.com/li-lab-mcgill/SpaTM/tree/archive/v0.2)) [can be found here](https://github.com/aosakwe/SpaTM_Analysis).
+Our manuscript pre-print detailing the method's performance and analyses [can be found here](https://www.biorxiv.org/content/10.1101/2025.01.24.634726v1). The analysis scripts used to generate the results found in the manuscript (using [version 0.3 of SpaTM](https://github.com/li-lab-mcgill/SpaTM/tree/archive/v0.3)) [can be found here](https://github.com/aosakwe/SpaTM_Analysis).
 
 ## Installation
 ```
