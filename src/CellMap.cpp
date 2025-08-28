@@ -85,11 +85,11 @@ std::unordered_map<int,Cell> build_Cell_Map(arma::sp_mat& counts,
                                             bool rand_gamma = true,
                                             bool verbal = false, //deprecated
                                             int num_threads = 1){
-  //omp_set_num_threads(num_threads);
+  omp_set_num_threads(num_threads);
 
   std::unordered_map<int,Cell> CellMap;
   //int cell_start,cell_end;
-  //#pragma omp parallel for
+  #pragma omp parallel for
   for (int i = 0; i < D; i++){
     arma::uvec geneidx = arma::find(counts.col(i));
     arma::mat mtx(geneidx.n_elem,3);
