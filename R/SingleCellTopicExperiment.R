@@ -1,6 +1,6 @@
 ## SingleCellTopicExperiment
 
-
+# TODO finish documenting arguments
 
 
 #### Extending SCE object
@@ -41,6 +41,7 @@ setClass(
 #' @param K Integer. The number of topics to use. Defaults to 10 if not provided.
 #' @param hvg Integer or NULL. If numeric, filters for the top `hvg` highly variable genes.
 #' @param verbal Logical. If `TRUE`, prints progress messages.
+#' @param balanced Logical. If `TRUE`, adapts guided priors to be 1/label proportion to address class imbalances. Only applied if guided = TRUE. default is FALSE.
 #'
 #' @return A `SingleCellTopicExperiment` object with initialized topic modeling components.
 #'
@@ -53,6 +54,7 @@ SingleCellTopicExperiment <- function(sce,guided = FALSE,
                                       K = NULL,
                                       hvg = NULL,
                                       verbal = FALSE,
+                                      balanced = FALSE,
                                       disease = NULL,
                                       disease_type = NULL){
   if (!is(counts(sce),'dgCMatrix')){
@@ -82,6 +84,9 @@ SingleCellTopicExperiment <- function(sce,guided = FALSE,
         colData(scte)[,labels] <- as.factor(colData(scte)[,labels])
       }
       scte$int_celltype <- as.numeric(colData(scte)[,labels])
+      if (balanced){
+        if(verbal){message("Adjusting alpha priors to accomodate for class imbalance")}
+      }
       if(verbal){
         if(!is.null(disease) & !is.null(disease_type)){
           cat("Running disease-informed initialization\n")
@@ -90,9 +95,12 @@ SingleCellTopicExperiment <- function(sce,guided = FALSE,
       alphaPrior(scte) <- build_alpha(te = scte,
                                       labels = labels,
                                       K = NULL,
+                                      balanced = balanced,
                                       disease = disease,
                                       disease_type = disease_type)
       K <- ncol(alphaPrior(scte))
+
+
     } else {
       stop("labels argument must be defined if guided parameter is set to TRUE")
     }

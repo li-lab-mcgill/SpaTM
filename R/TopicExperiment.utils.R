@@ -256,7 +256,9 @@ setReplaceMethod(
 #' @return A matrix representing the alpha prior.
 #' @import Matrix
 #' @export
-build_alpha <- function(te,labels = NULL,K = 10,disease = NULL,disease_type = NULL){
+build_alpha <- function(te,labels = NULL,K = 10,
+                        balanced = FALSE,
+                        disease = NULL,disease_type = NULL){
   if (is.null(labels)){
     a <- matrix(1,ncol(te),K)
     colnames(a) <- paste("Topic-",1:K,sep='')
@@ -279,7 +281,20 @@ build_alpha <- function(te,labels = NULL,K = 10,disease = NULL,disease_type = NU
     colnames(a) <- covariates
 
     ## If disease info provided - update matrix accordingly
+    if (balanced){
 
+      cell_prop <- as.matrix(table(colData(te)[,labels]))
+
+      cell_prop <- cell_prop/ncol(te)
+
+      ## Update alphaPrior
+
+      a[a == 0.01] <- 0
+      cell_prop <- 1/cell_prop[colnames(a),]
+
+      a <- sweep(a, 2, cell_prop, "*")
+      a[a == 0] <- 0.01
+    }
 
     if (!is.null(disease) & !is.null(disease_type)){
       a <- a[,rep(1:ncol(a),each =length(unique(disease)))]

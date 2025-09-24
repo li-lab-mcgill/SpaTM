@@ -329,7 +329,7 @@ STM_Torch <- function(spe,
     spe <- buildPhi(spe)
 
 
-    spe <- inferTopics(spe,1,100,verbal = FALSE,phi(spe))
+    spe <- inferTopics(spe,1,100,verbal = FALSE,phi(spe),burnin = burnin)
     spe <- buildTheta(spe)
 
 
@@ -339,7 +339,7 @@ STM_Torch <- function(spe,
       100/ncol(spe)
 
     ###
-    spe_val <- inferTopics(spe_val,1,100,verbal = FALSE,phi(spe))
+    spe_val <- inferTopics(spe_val,1,100,verbal = FALSE,phi(spe),burnin = burnin)
     spe_val <- buildTheta(spe_val)
 
 
@@ -530,7 +530,7 @@ STM <- function(spe,
     if (!requireNamespace("torch", quietly = TRUE)) {
       stop('You do not have torch installed. Please install it before trying to use the STM-Torch workflow')
     }
-    if (burnin > 0){
+    if (burnin_lda > 0){
       spe <- STM_Torch_burnin(spe,
                                colData(spe)[,label],
                                num_threads,

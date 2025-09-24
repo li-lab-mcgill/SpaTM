@@ -50,7 +50,8 @@ SpatialTopicExperiment <- function(spe,guided = FALSE,
                                       labels = NULL,
                                       K = NULL,
                                       hvg = NULL,
-                                      verbal = FALSE){
+                                      verbal = FALSE,
+                                      balanced = FALSE){
   if (!is(counts(spe),'dgCMatrix')){
     message('Converting counts to sparse matrix (dgCmatrix). \nSpaTM is currently not compatible with other matrix formats.')
     counts(spe) <- as(counts(spe),'dgCMatrix')
@@ -78,13 +79,16 @@ SpatialTopicExperiment <- function(spe,guided = FALSE,
         colData(spte)[,labels] <- as.factor(colData(spte)[,labels])
       }
       spte$int_celltype <- as.numeric(colData(spte)[,labels])
-      alphaPrior(spte) <- build_alpha(spte,labels)
+      if (balanced){
+        if(verbal){message("Adjusting alpha priors to accomodate for class imbalance")}
+      }
+      alphaPrior(spte) <- build_alpha(spte,labels,balanced = balanced)
       K <- ncol(alphaPrior(spte))
     } else {
       stop("labels argument must be defined if guided parameter is set to TRUE")
     }
   } else {
-    alphaPrior(spte) <- build_alpha(spte,labels,K)
+    alphaPrior(spte) <- build_alpha(spte,labels,K = K,balanced = balanced)
   }
   betaPrior(spte) <- build_beta(spte,K)
 

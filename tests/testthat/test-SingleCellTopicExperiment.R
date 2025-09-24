@@ -121,3 +121,21 @@ test_that("Count matrix is converted to Sparse matrix if it is not already", {
   #sce <- SingleCellTopicExperiment(sce)
   expect_true(is(counts(sce),'dgCMatrix'))
 })
+
+
+
+test_that("Class Imbalance correction for alphaPrior is correctly handled",{
+  counts_matrix <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+  counts_matrix <- as(counts_matrix,'dgCMatrix')
+  coldata <- data.frame(Celltype = factor(c(rep('A',8),rep('B',2))))
+  sce <- SingleCellExperiment(assays = list(counts = counts_matrix), colData = coldata)
+
+  scte <- SingleCellTopicExperiment(sce, guided = TRUE, labels = "Celltype", verbal = FALSE, balanced = TRUE)
+
+  expected_alpha_prior <- matrix(0.01, nrow = ncol(sce), ncol = length(unique(coldata$Celltype)))
+  expected_alpha_prior[1:8,1] <- (ncol(sce) / 8)
+  expected_alpha_prior[9:10,2] <- (ncol(sce) / 2)
+
+  expect_true(all(abs(scte@alphaPrior - expected_alpha_prior) < 1e-6),
+              info = "alphaPrior should be adjusted for class imbalance")
+})
