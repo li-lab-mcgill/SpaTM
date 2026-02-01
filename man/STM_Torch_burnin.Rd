@@ -17,7 +17,6 @@ STM_Torch_burnin(
   mlp,
   mlp_layers,
   mlp_epoch = 1000,
-  spe_val,
   burnin = 1
 )
 }
@@ -46,9 +45,9 @@ STM_Torch_burnin(
 
 \item{mlp_epoch}{The number of epochs for training the MLP during the burn-in phase.}
 
-\item{spe_val}{A validation set.}
-
 \item{burnin}{Maximum number of iterations to run during the STM LDA step for each sample (default is 0)}
+
+\item{spe_val}{A validation set.}
 }
 \description{
 This function performs the burn-in phase for training SpaTM-S using a multi-layer perceptron (MLP) model.

@@ -11,6 +11,7 @@ SingleCellTopicExperiment(
   K = NULL,
   hvg = NULL,
   verbal = FALSE,
+  balanced = FALSE,
   disease = NULL,
   disease_type = NULL
 )
@@ -27,6 +28,8 @@ SingleCellTopicExperiment(
 \item{hvg}{Integer or NULL. If numeric, filters for the top `hvg` highly variable genes.}
 
 \item{verbal}{Logical. If `TRUE`, prints progress messages.}
+
+\item{balanced}{Logical. If `TRUE`, adapts guided priors to be 1/label proportion to address class imbalances. Only applied if guided = TRUE. default is FALSE.}
 }
 \value{
 A `SingleCellTopicExperiment` object with initialized topic modeling components.

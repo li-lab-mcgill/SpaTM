@@ -144,6 +144,7 @@ fit_mlp <- function(mlp, train_dl, lr, max_epoch,class_prop) {
   for (i in 1:max_epoch) {
     coro::loop(
       for (batch in train_dl) {
+        opt$zero_grad()
         x_train <- batch$x
         y_train <- batch$y
         # Train_Pred
@@ -153,7 +154,7 @@ fit_mlp <- function(mlp, train_dl, lr, max_epoch,class_prop) {
         loss <- loss_fn(y_pred, y_train)
 
         # Backpropagation
-        opt$zero_grad()
+
         loss$backward()
 
         # Update weights
@@ -216,7 +217,7 @@ pred_mlp <- function(mlp,
 #' @param mlp A model definition for the multi-layer perceptron (MLP).
 #' @param mlp_layers A vector specifying the number of units in each layer of the MLP.
 #' @param mlp_epoch The number of epochs for training the MLP.
-#' @param spe_val A validation set used for monitoring overfitting in SpaTM-S.
+#' @param spe_val A validation set used for monitoring overfitting in SpaTM-S (default `NUll`).
 #' @param device The device for training (e.g., "cpu" or "cuda") when using SpaTM-S. If `NULL`, the default device is used. Note that we are still working on reliably GPU enabling the code.
 #' @param balanced_class Logical indicating whether to balance the class distribution during model training (default is `TRUE`).
 #' @param burnin Maximum number of iterations to run during the STM LDA step for each sample (default is 0)
@@ -240,11 +241,13 @@ STM_Torch <- function(spe,
                       mlp,
                       mlp_layers,
                       mlp_epoch = 1000,
-                      spe_val,
+                      spe_val = NULL,
+                      val_labels = NULL,
                       device = torch_device('cpu'),
                       balanced_class = TRUE,
                       burnin = 1,
-                      dummy_topic = FALSE){
+                      dummy_topic = FALSE,
+                      final_run_iter = 100){
   elbo_mat <- matrix(0,maxiter,5)
   old_elbo <- -9999999
   cur_elbo <- 0
@@ -257,6 +260,7 @@ STM_Torch <- function(spe,
   for(i in 1:maxiter){
     mlp_parameters <- lapply(mlp$parameters,function(a){
       t(as.matrix(a))})
+
     cur_elbo <- stm_torch_estep(counts(spe),
                                 spe$int_cell,
                                 rowData(spe)$gene_ints,
@@ -280,14 +284,20 @@ STM_Torch <- function(spe,
 
     #Calc N_mean
     #M STEP
+    spe <- buildTheta(spe)
+    spe <- buildPhi(spe)
 
-    ndk_prop <- torch::torch_tensor(ndk(spe)/rowSums(ndk(spe)),device = device)
+
+    spe <- inferTopics(spe,1,100,verbal = FALSE,phi(spe),burnin = burnin)
+    spe <- buildTheta(spe)
+
+
+    ndk_prop <- torch::torch_tensor(theta(spe),device = device)
     ##Added Dummy Topic Edit
     if (dummy_topic){
       ndk_prop <- ndk_prop[,1:(K-1)]
     }
     ####
-
     train_dl <- mlp_data(ndk_prop,tensor_labels) %>%
       dataloader(1000,TRUE,num_workers = 0)
     if (balanced_class){
@@ -304,7 +314,7 @@ STM_Torch <- function(spe,
     }
 
     mlp <- fit_mlp(mlp,train_dl,lr,mlp_epoch,class_prop)
-    if (i == maxiter){mlp <- fit_mlp(mlp,train_dl,lr,3000, class_prop)}
+    if (i == maxiter){mlp <- fit_mlp(mlp,train_dl,lr,final_run_iter, class_prop)}
     cur_pred <- mlp(ndk_prop)
     ce_loss <- nnf_cross_entropy(cur_pred,tensor_labels)
     ce_loss <- as.numeric(ce_loss$cpu())
@@ -315,7 +325,7 @@ STM_Torch <- function(spe,
 
     elbo_mat[i,5] <- -ce_loss/ncol(counts(spe))
     if (dif <= thresh & i < maxiter){
-      mlp <- fit_mlp(mlp,train_dl,1e-5,3000,class_prop)
+      mlp <- fit_mlp(mlp,train_dl,1e-5,final_run_iter,class_prop)
       if (verbal){print("ELBO converged early")}
       break
     }
@@ -325,28 +335,25 @@ STM_Torch <- function(spe,
     cur_elbo <- 0
     ## Check Accuracy
 
-    spe <- buildTheta(spe)
-    spe <- buildPhi(spe)
-
-
-    spe <- inferTopics(spe,1,100,verbal = FALSE,phi(spe),burnin = burnin)
-    spe <- buildTheta(spe)
-
 
     train_pred <- pred_mlp(mlp,theta(spe),device,dummy_topic)
 
-    train_acc <- length(which(train_pred == as.numeric(spe$spatialLIBD)))*
+    train_acc <- length(which(train_pred == as.numeric(labels+1)))*
       100/ncol(spe)
 
     ###
-    spe_val <- inferTopics(spe_val,1,100,verbal = FALSE,phi(spe),burnin = burnin)
-    spe_val <- buildTheta(spe_val)
+    if (!is.null(spe_val)){
+      spe_val <- inferTopics(spe_val,1,100,verbal = FALSE,phi(spe),burnin = burnin)
+      spe_val <- buildTheta(spe_val)
 
 
-    val_pred <- pred_mlp(mlp,theta(spe_val),device,dummy_topic)
+      val_pred <- pred_mlp(mlp,theta(spe_val),device,dummy_topic)
 
-    val_acc <- length(which(val_pred == as.numeric(spe_val$spatialLIBD)))*
-      100/ncol(spe_val)
+      val_acc <- length(which(val_pred == as.numeric(val_labels)))*
+        100/ncol(spe_val)
+    } else {
+      val_acc <- NA
+    }
 
     acc_mat[i,] <- c(train_acc,val_acc)
     if (verbal){ progress_bar(i,maxiter,elbo_mat[i,4],train_acc,val_acc)}
@@ -391,7 +398,6 @@ STM_Torch_burnin <- function(spe,
                              mlp,
                              mlp_layers,
                              mlp_epoch = 1000,
-                             spe_val,
                              burnin = 1){
 
   old_elbo <- -9999999
@@ -420,6 +426,7 @@ STM_Torch_burnin <- function(spe,
                                 num_threads,
                                 burnin,
                                 cur_iter = i-1)
+    #spe <- GTM(spe,K,ncol(spe),num_threads,maxiter,F,F,T,burnin = 100)
   }
   return(spe)
 }
@@ -458,6 +465,7 @@ STM_Torch_burnin <- function(spe,
 #' @param dummy_topic Logical indicating whether to add a dummy topic for regularization (default is `FALSE`).
 #' @param burnin_lda Number of iterations for burn-in phase in Torch-STM (default is 5).
 #' @param burnin Maximum number of iterations to run during the STM LDA step for each sample (default is 0)
+#' @param final_run_iter Maximum number of iterations to optimize the MLP for in the last STM epoch (default is 100)
 #'
 #' @return The input spatial experiment object (`spe`) with updated metadata containing the STM model results:
 #'   - `STM_Weights`: A matrix of learned topic weights (GLM-STM).
@@ -481,7 +489,8 @@ STM <- function(spe,
                       balanced_class = TRUE,
                       dummy_topic = FALSE,
                       burnin_lda = 5,
-                      burnin = 100){
+                      burnin = 100,
+                      final_run_iter = 100){
   if (!is(spe,'TopicExperiment')){
     stop('This function requires a TopicExperiment object to run correctly. Please create a Spatial or SingleCell variant before using the RTM function.')
   }
@@ -494,7 +503,16 @@ STM <- function(spe,
       colData(spe)[,label] <- as.numeric(colData(spe)[,label]) - 1
 
   }
-  #Create numeric indexing for Rcpp
+
+  if (!is.null(spe_val)){
+    if(!is.numeric(colData(spe_val)[,label])){
+      if(!is.factor(colData(spe_val)[,label]) ){
+        colData(spe_val)[,label] <- factor(colData(spe_val)[,label],levels = colData(spe)[,label])
+      }
+      colData(spe_val)[,label] <- as.numeric(colData(spe_val)[,label]) - 1
+
+    }
+  }
 
   if (is.null(mlp)){
     if (verbal){
@@ -524,9 +542,6 @@ STM <- function(spe,
      if(verbal){
        message('Running Torch-STM')
      }
-    if (is.null(spe_val)){
-      stop('Need to have a validation set to ensure there is no overfitting')
-    }
     if (!requireNamespace("torch", quietly = TRUE)) {
       stop('You do not have torch installed. Please install it before trying to use the STM-Torch workflow')
     }
@@ -543,7 +558,7 @@ STM <- function(spe,
                                mlp,
                                mlp_layers,
                                mlp_epoch = 0,
-                               spe_val)
+                               burnin = burnin)
     }
 
     metadata(spe)[['STM_MLP']] <- STM_Torch(spe,
@@ -560,7 +575,8 @@ STM <- function(spe,
                                             mlp_epoch,
                                             spe_val,
                                             balanced_class = balanced_class,
-                                            burnin = burnin)
+                                            burnin = burnin,
+                                            final_run_iter = final_run_iter)
     return(spe)
   }
 

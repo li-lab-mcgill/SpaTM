@@ -10,7 +10,8 @@ SpatialTopicExperiment(
   labels = NULL,
   K = NULL,
   hvg = NULL,
-  verbal = FALSE
+  verbal = FALSE,
+  balanced = FALSE
 )
 }
 \arguments{

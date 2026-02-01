@@ -1,8 +1,8 @@
 Package: SpaTM
 Type: Package
-Title: Topic Modelling for Spatially Informed Transcriptional Programs
-Version: 0.3
-Date: 2025-07-14
+Title: Spatial Topic Model
+Version: 0.5
+Date: 2026-02-01
 Author: Adrien Osakwe
 Maintainer: Adrien Osakwe <adrien.osakwe@mail.mcgill.ca>
 Description: Topic Modelling framework for Spatial, Bulk, and Single cell analyses.

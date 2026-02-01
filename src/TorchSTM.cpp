@@ -173,89 +173,90 @@ double stm_torch_estep(arma::sp_mat& spe_counts,
                                                                     zero_gamma,
                                                                     rand_gamma,
                                                                     labels);
+  //option for multiple iterations of E-step before updating classifier
+  for (int w = 0; w < 5; w++){
+    arma::rowvec beta_sum = arma::sum(beta,0);
+    arma::rowvec nwk_sum = arma::sum(n_wk,0);
+    #pragma omp parallel for private(mlp_weights) shared(STM_CellMap, n_dk, n_wk, beta, beta_sum, nwk_sum)
+    for (int i = 1; i <= D; i++){
+      arma::rowvec gamma_k = arma::zeros<arma::rowvec>(K);
+      arma::rowvec cur_counts = arma::zeros<arma::rowvec>(K);
+      arma::rowvec cur_ndk = arma::zeros<arma::rowvec>(K);
+      arma::rowvec label_post = arma::zeros<arma::rowvec>(K);
+      double d_diff = 999;
+      int iter = burnin;
 
-  arma::rowvec beta_sum = arma::sum(beta,0);
-  arma::rowvec nwk_sum = arma::sum(n_wk,0);
-  #pragma omp parallel for private(mlp_weights) shared(STM_CellMap, n_dk, n_wk, beta, beta_sum, nwk_sum)
-  for (int i = 1; i <= D; i++){
-    arma::rowvec gamma_k = arma::zeros<arma::rowvec>(K);
-    arma::rowvec cur_counts = arma::zeros<arma::rowvec>(K);
-    arma::rowvec cur_ndk = arma::zeros<arma::rowvec>(K);
-    arma::rowvec label_post = arma::zeros<arma::rowvec>(K);
-    double d_diff = 999;
-    int iter = burnin;
+      arma::mat cur_gamma = STM_CellMap[i].cell_gamma; //TODO
+      arma::mat m = STM_CellMap[i].cell_mtx; //TODO
 
-    arma::mat cur_gamma = STM_CellMap[i].cell_gamma; //TODO
-    arma::mat m = STM_CellMap[i].cell_mtx; //TODO
+      while((d_diff > 0.01) & (iter > 0)){ //consider OR statement
+        iter--;
 
-    while((d_diff > 0.01) & (iter > 0)){ //consider OR statement
-      iter--;
+        int ndk_id = i-1; //To accomodate row indices for matrix
+        int tokens = m.n_rows;
+        cur_ndk = n_dk.row(ndk_id);
 
-      int ndk_id = i-1; //To accomodate row indices for matrix
-      int tokens = m.n_rows;
-      cur_ndk = n_dk.row(ndk_id);
+        for (int token = 0; token < tokens; token++){
 
-      for (int token = 0; token < tokens; token++){
-
-        int counts = m(token,0);
-        int gene = m(token,2)-1;
-        cur_counts = cur_gamma.row(token)*counts;
-
-
-        label_post = get_label_prob(cur_ndk,cur_gamma.row(token),
-                                    counts,K,
-                                    STM_CellMap[i].cell_label,
-                                    layers,
-                                    mlp_weights,
-                                    dummy_topic);
-        if (label_post.has_nan()){
-          label_post = arma::ones<arma::rowvec>(K)/K;
-          //Rcout << "Encountered Nan in Label Probs" << std::endl;
-        }
-        gamma_k = (alpha.row(ndk_id) + cur_ndk - cur_counts) %
-          ((beta.row(gene)+n_wk.row(gene)- cur_counts) /
-            (beta_sum+nwk_sum- cur_counts)) %
-              label_post;
+          int counts = m(token,0);
+          int gene = m(token,2)-1;
+          cur_counts = cur_gamma.row(token)*counts;
 
 
-        gamma_k = gamma_k/sum(gamma_k);
-        //sequential par
-        if (arma::any(gamma_k < 0)){
-          gamma_k = (alpha.row(ndk_id) + cur_ndk) % (beta.row(gene)+
-            n_wk.row(gene)) /
-              (beta_sum+nwk_sum) %
+          label_post = get_label_prob(cur_ndk,cur_gamma.row(token),
+                                      counts,K,
+                                      STM_CellMap[i].cell_label,
+                                      layers,
+                                      mlp_weights,
+                                      dummy_topic);
+          if (label_post.has_nan()){
+            label_post = arma::ones<arma::rowvec>(K)/K;
+            //Rcout << "Encountered Nan in Label Probs" << std::endl;
+          }
+          gamma_k = (alpha.row(ndk_id) + cur_ndk - cur_counts) %
+            ((beta.row(gene)+n_wk.row(gene)- cur_counts) /
+              (beta_sum+nwk_sum- cur_counts)) %
                 label_post;
-        }
-        if (gamma_k.has_nan()){
-          Rcout << "cell:  " << ndk_id << " gene: " << gene << " gamma: " << gamma_k << std::endl;
-          Rcout << "n_wk:" << std::endl;
-          Rcout << n_wk.row(gene) << std::endl;
-          Rcout << "n_dk" << std::endl;
-          Rcout << n_dk.row(ndk_id) << std::endl;
-          Rcout << "P(Label|Z)" << std::endl;
-          Rcout << label_post << std::endl;
-          stop("Variational Estimates contain NAN");
+
+
+          gamma_k = gamma_k/sum(gamma_k);
+          //sequential par
+          if (arma::any(gamma_k < 0)){
+            gamma_k = (alpha.row(ndk_id) + cur_ndk) % (beta.row(gene)+
+              n_wk.row(gene)) /
+                (beta_sum+nwk_sum) %
+                  label_post;
+          }
+          if (gamma_k.has_nan()){
+            Rcout << "cell:  " << ndk_id << " gene: " << gene << " gamma: " << gamma_k << std::endl;
+            Rcout << "n_wk:" << std::endl;
+            Rcout << n_wk.row(gene) << std::endl;
+            Rcout << "n_dk" << std::endl;
+            Rcout << n_dk.row(ndk_id) << std::endl;
+            Rcout << "P(Label|Z)" << std::endl;
+            Rcout << label_post << std::endl;
+            stop("Variational Estimates contain NAN");
+          }
+
+          cur_gamma.row(token) = gamma_k;
+
         }
 
-        cur_gamma.row(token) = gamma_k;
+        n_dk.row(ndk_id).zeros();
+
+        for (int token = 0; token < tokens; token++){ //TODO vectorise
+          n_dk.row(ndk_id) += cur_gamma.row(token)*m(token,0);
+        }
+
+        d_diff = std::abs(arma::accu(cur_ndk - n_dk.row(ndk_id)));
 
       }
-
-      n_dk.row(ndk_id).zeros();
-
-      for (int token = 0; token < tokens; token++){ //TODO vectorise
-        n_dk.row(ndk_id) += cur_gamma.row(token)*m(token,0);
-      }
-
-      d_diff = std::abs(arma::accu(cur_ndk - n_dk.row(ndk_id)));
-
+      STM_CellMap[i].cell_gamma = cur_gamma;
     }
-    STM_CellMap[i].cell_gamma = cur_gamma;
+    //Rcout << "finished iteration" << std::endl;
+    build_nwk_stm(n_wk,STM_CellMap,D,K);
+    build_ndk_stm(n_dk,STM_CellMap,D,K);
   }
-  //Rcout << "finished iteration" << std::endl;
-  build_nwk_stm(n_wk,STM_CellMap,D,K);
-  build_ndk_stm(n_dk,STM_CellMap,D,K);
-
   elbo =  get_stm_ELBO(STM_CellMap,
                             alpha,
                             beta,

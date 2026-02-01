@@ -17,11 +17,13 @@ STM_Torch(
   mlp,
   mlp_layers,
   mlp_epoch = 1000,
-  spe_val,
+  spe_val = NULL,
+  val_labels = NULL,
   device = torch_device("cpu"),
   balanced_class = TRUE,
   burnin = 1,
-  dummy_topic = FALSE
+  dummy_topic = FALSE,
+  final_run_iter = 100
 )
 }
 \arguments{
@@ -49,7 +51,7 @@ STM_Torch(
 
 \item{mlp_epoch}{The number of epochs for training the MLP.}
 
-\item{spe_val}{A validation set used for monitoring overfitting in SpaTM-S.}
+\item{spe_val}{A validation set used for monitoring overfitting in SpaTM-S (default `NUll`).}
 
 \item{device}{The device for training (e.g., "cpu" or "cuda") when using SpaTM-S. If `NULL`, the default device is used. Note that we are still working on reliably GPU enabling the code.}
 

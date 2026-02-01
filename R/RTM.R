@@ -17,7 +17,7 @@
 #' @param zero_gamma A logical specifying whether to initialize gamma values to zero (default: FALSE).
 #' @param rand_gamma A logical indicating whether to randomly initialize gamma values (default: TRUE).
 #' @param m_update A logical specifying if the classifier/regression component should be updated (default: TRUE)
-#' @param burnin Maximum number of iterations to run during the STM LDA step for each sample (default is 0)
+#' @param burnin Maximum number of iterations to run during the RTM E step for each sample (default is 1)
 #'
 #' @return A `SpatialTopicExperiment` object with updated RTM weights stored in `metadata(scte)[['RTM_weights']]`.
 #'
@@ -263,6 +263,65 @@ minmax_norm <- function(adj_mat){
   max_val <- max(adj_mat)
   adj_norm <- (adj_mat - min_val) / (max_val - min_val)
   return(adj_norm)
+}
+
+
+
+
+#' Predict Neighbor Relationships Using Theta Matrix and Weights
+#'
+#' This function is a wrapper around the Rcpp function `nbr_pred` that computes
+#' pairwise predictions between all rows in a theta matrix using specified weights
+#' and loss function.
+#'
+#' @param theta The inferred cell/spot-topic mixtures
+#' @param weights RTM-derived weights. With the intercept as the first value
+#' @param max_val A numeric scalar used for normalization in loss function 0.
+#'   Default is 1.
+#' @param loss_fun An integer specifying the loss function to use:
+#'   \itemize{
+#'     \item 0: Exponential with normalization: exp(x*weights) / max_val
+#'     \item 1: Logistic/sigmoid: 1 / (1 + exp(-x*weights))
+#'     \item 2: Linear: x*weights
+#'   }
+#'   Default is 1.
+#'
+#' @return Predicted adjacency matrix representing all neighbor predictions
+#' @examples
+#' \dontrun{
+#' # Create example theta matrix
+#' theta <- matrix(runif(12), nrow = 3, ncol = 4)
+#'
+#' # Create weights (5 weights: 4 for features + 1 for bias)
+#' weights <- c(0.1, 0.5, -0.3, 0.8, 0.2)
+#'
+#' # Use exponential loss function
+#' pred_exp <- pred_nbrs(theta, weights, max_val = 10, loss_fun = 0)
+#'
+#' # Use logistic loss function
+#' pred_logistic <- pred_nbrs(theta, weights, loss_fun = 1)
+#'
+#' # Use linear loss function
+#' pred_linear <- pred_nbrs(theta, weights, loss_fun = 2)
+#' }
+#'
+#' @export
+pred_nbrs <- function(theta, weights, max_val = 1, loss_fun = 1) {
+  if (length(weights) != (ncol(theta) + 1)) {
+    stop(paste("weights length should be", ncol(theta) + 1,
+               "(ncol(theta) + 1 for bias term), but got", length(weights)))
+  }
+
+  result <- nbr_pred(theta = theta,
+                     weights = weights,
+                     max_val = max_val,
+                     loss_fun = as.integer(loss_fun))
+  if (!is.null(rownames(theta))) {
+    rownames(result) <- rownames(theta)
+    colnames(result) <- rownames(theta)
+  }
+
+  return(result)
 }
 
 

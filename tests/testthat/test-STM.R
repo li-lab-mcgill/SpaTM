@@ -111,7 +111,7 @@ test_that("STM_Torch_burnin runs without errors", {
   labels <- sample(0:1, ncol(spe), replace = TRUE)
   mlp <- build_mlp(layers = 1, d_in = ncol(alphaPrior(spe)), d_hidden = 50, d_out = 2)
   spe_val <- create_test_spatial_topic_experiment()
-  expect_silent(STM_Torch_burnin(spe, labels, num_threads = 1, maxiter = 5, verbal = FALSE, zero_gamma = TRUE, rand_gamma = FALSE, thresh = 0.00001, lr = 0.001, mlp = mlp, mlp_layers = 1, mlp_epoch = 1, spe_val = spe_val))
+  expect_silent(STM_Torch_burnin(spe, labels, num_threads = 1, maxiter = 5, verbal = FALSE, zero_gamma = TRUE, rand_gamma = FALSE, thresh = 0.00001, lr = 0.001, mlp = mlp, mlp_layers = 1, mlp_epoch = 1))
 })
 
 test_that("Rcpp forward pass matches torch forward pass",{
@@ -137,7 +137,23 @@ test_that("Rcpp forward pass matches torch forward pass",{
 
 
 
-
+test_that("STM runs without spe_val provided", {
+  ste <- create_test_spatial_topic_experiment()
+  K <- ncol(alphaPrior(ste))
+  classes <- length(unique(ste$label))
+  mlp <- build_mlp(layers = 1, d_in = K, d_hidden = 50, d_out = classes)
+  ste$label <- as.numeric(as.factor(ste$label)) -1
+  expect_silent(ste <- STM(ste,'label',
+                           num_threads = 1,
+                           maxiter = 5,
+                           verbal = FALSE,
+                           mlp = mlp,
+                           mlp_layers = 1,
+                           mlp_epoch = 1,
+                           spe_val = NULL,
+                           device = torch_device('cpu'),
+                           burnin = 1))
+ })
 
 
 test_that("progress_bar prints the correct output", {

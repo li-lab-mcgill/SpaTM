@@ -82,6 +82,7 @@ get_nbrs <- function(spe,samples,cell_ids,group_by = NULL,dist = 1,loss_fun = 1)
       } else if (n == 0){
         nbr_list[[i]] <- rbind(cbind(cur_nbrs,rep(0,n)),cbind(nbrs,rep(1,n),rep(0,n)))
       }
+
     }
   }
   if (do.call('sum',lapply(nbr_list,nrow)) == 0){

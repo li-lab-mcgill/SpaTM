@@ -22,7 +22,8 @@ STM(
   balanced_class = TRUE,
   dummy_topic = FALSE,
   burnin_lda = 5,
-  burnin = 100
+  burnin = 100,
+  final_run_iter = 100
 )
 }
 \arguments{
@@ -61,6 +62,8 @@ STM(
 \item{burnin_lda}{Number of iterations for burn-in phase in Torch-STM (default is 5).}
 
 \item{burnin}{Maximum number of iterations to run during the STM LDA step for each sample (default is 0)}
+
+\item{final_run_iter}{Maximum number of iterations to optimize the MLP for in the last STM epoch (default is 100)}
 }
 \value{
 The input spatial experiment object (`spe`) with updated metadata containing the STM model results:

@@ -402,7 +402,7 @@ void run_RTM_epoch(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
   arma::rowvec cur_counts = arma::zeros<arma::rowvec>(K);
   arma::rowvec cur_ndk = arma::zeros<arma::rowvec>(K);
   arma::rowvec label_post = arma::zeros<arma::rowvec>(K);
-#pragma omp parallel for private(label_post,cur_ndk,gamma_k,cur_counts,gene,counts,ndk_id)
+  #pragma omp parallel for private(label_post,cur_ndk,gamma_k,cur_counts,gene,counts,ndk_id)
   for (int i = 1; i <= D; i++){
     //Rcout << "here 5" << std::endl;
     arma::mat cur_gamma = RTM_CellMap[i].cell_gamma;
@@ -448,6 +448,13 @@ void run_RTM_epoch(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
           //Rcout << "here C" << std::endl;
           //Rcout << "End label prob" << std::endl;
         }
+        // if (label_post.has_nan()){
+          // Rcout << "Cell: " << i  << std::endl;
+          // Rcout << "token : " << token << std::endl;
+          // Rcout << "current gamma: " << gamma_k << std::endl;
+          // Rcout << "label_post: " << label_post << std::endl;
+          // stop("Variational Estimates contain NAN");
+        // }
 
         //Rcout << "here 6" << std::endl;
         gamma_k = (alpha.row(ndk_id) + n_dk.row(ndk_id) - cur_counts) %
@@ -468,6 +475,7 @@ void run_RTM_epoch(std::unordered_map<int,RTM_Cell>& RTM_CellMap,
           Rcout << "Cell: " << i  << std::endl;
           Rcout << "token : " << token << std::endl;
           Rcout << "current gamma: " << gamma_k << std::endl;
+          Rcout << "label_post" << label_post << std::endl;
           stop("Variational Estimates contain NAN");
         }
 
@@ -652,7 +660,7 @@ arma::vec train_RTM(arma::sp_mat& counts,
   //Rcout << "here ndk" << std::endl;
   // Initialize Weights
 
-  arma::vec model_weights = arma::ones(K);
+  arma::vec model_weights = arma::zeros<arma::vec>(K);
   double model_bias = 0.0;
   double num_links = 0.0;
   for (int i = 1; i <= D; i++){
