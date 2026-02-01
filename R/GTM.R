@@ -42,9 +42,57 @@ GTM <- function(scte,K,D,num_threads = 1,maxiter = 100,verbal = TRUE,
   return(scte)
 }
 
-# full-batch
-
-# mini-batch
+#' Stochastic Guided Topic Model (sGTM)
+#'
+#' This function trains a stochastic variational inference (SVI) version of the
+#' Guided Topic Model (GTM) using mini-batches of cells. It builds the `CellMap`
+#' object one batch at a time to reduce memory usage during inference.
+#'
+#' @param scte A `SingleCellTopicExperiment` or `SpatialTopicExperiment` object containing count data and prior matrices.
+#' @param K Integer, the number of topics to infer.
+#' @param D Integer, the number of cells (documents) in the dataset.
+#' @param batch_size Integer, the number of cells per mini-batch. Default is 1024.
+#' @param num_threads Integer, the number of threads to use for parallel computation. Default is 1.
+#' @param maxiter Integer, the maximum number of epochs for training. Default is 100.
+#' @param verbal Logical, whether to print progress messages. Default is TRUE.
+#' @param zero_gamma Logical, whether to initialize gamma values to zero. Default is FALSE.
+#' @param rand_gamma Logical, whether to initialize gamma values randomly. Default is TRUE.
+#' @param thresh Convergence threshold based on the change in `nwk`. Default is 1e-8.
+#' @param burnin Maximum number of iterations to run during the GTM E-step for each sample (default is 1).
+#' @param lr Numeric, the SVI learning rate for global updates. Default is 0.1.
+#' @param shuffle Logical, whether to shuffle cells each epoch. Default is TRUE.
+#'
+#' @return A `SingleCellTopicExperiment` or `SpatialTopicExperiment` object with updated topic distributions.
+#'
+#' @import SingleCellExperiment
+#' @export
+sGTM <- function(scte,K,D,batch_size = 1024,num_threads = 1,maxiter = 100,verbal = TRUE,
+                  zero_gamma = FALSE,
+                  rand_gamma = TRUE,
+                  thresh = 1e-8,burnin = 1,
+                  lr = 0.1,
+                  shuffle = TRUE){
+  train_sgtm(counts(scte),
+              celltypes = scte$int_cell,
+              genes = rowData(scte)$gene_ints,
+              alpha = alphaPrior(scte),
+              beta = betaPrior(scte),
+              K,
+              D,
+              ndk(scte),
+              nwk(scte),
+              batch_size,
+              num_threads,
+              maxiter,
+              verbal,
+              zero_gamma,
+              rand_gamma,
+              thresh,
+              burnin,
+              lr,
+              shuffle)
+  return(scte)
+}
 
 #### Prediction ####
 #' Topic Inference using Pretrained Model

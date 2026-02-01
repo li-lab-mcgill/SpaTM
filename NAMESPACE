@@ -3,6 +3,7 @@
 export(BuildDiseaseAlpha)
 export(GTM)
 export(RTM)
+export(sGTM)
 export(STM)
 export(STM_Torch)
 export(STM_Torch_burnin)

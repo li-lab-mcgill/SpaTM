@@ -66,3 +66,5 @@ test_that("inferTopics should only update ndk and theta matrices with correct su
 
 })
 
+
+

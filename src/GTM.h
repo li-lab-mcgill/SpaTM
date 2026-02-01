@@ -6,7 +6,6 @@
 #include <RcppArmadillo.h>
 #include <cstdlib>
 #include <omp.h>
-#include <RcppArmadilloExtensions/sample.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 using namespace std;
@@ -70,6 +69,7 @@ void train_gtm(arma::sp_mat& counts,
                      bool zero_gamma,
                      bool rand_gamma,
                      double thresh);
+
 
 
 

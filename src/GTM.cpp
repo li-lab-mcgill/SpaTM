@@ -3,7 +3,6 @@
 #include <omp.h>
 
 #include <RcppArmadillo.h>
-#include <RcppArmadilloExtensions/sample.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 using namespace std;
@@ -46,6 +45,7 @@ void build_ndk(arma::mat& n_dk,
     }
   }
 }
+
 
 
 // [[Rcpp::export]]
@@ -195,6 +195,7 @@ void run_epoch(std::unordered_map<int,Cell>& CellMap,const arma::mat& alpha,
 }
 
 
+
 /* Full model
 
  */
@@ -302,6 +303,7 @@ void train_gtm(arma::sp_mat& counts,
   return;
 
 }
+
 
 
 /// PREDICTION

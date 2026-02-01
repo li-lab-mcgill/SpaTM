@@ -106,6 +106,40 @@ std::unordered_map<int,Cell> build_Cell_Map(arma::sp_mat& counts,
   return CellMap;
 }
 
+std::unordered_map<int,Cell> build_Cell_Map_batch(arma::sp_mat& counts,
+                                            arma::vec& celltypes,
+                                            arma::vec& genes,
+                                            const arma::mat& alpha,
+                                            const arma::mat& beta,
+                                            const arma::uvec& batch_ids,
+                                            int K,
+                                            bool zero_gamma,
+                                            bool rand_gamma = true,
+                                            int num_threads = 1){
+  omp_set_num_threads(num_threads);
+
+  std::unordered_map<int,Cell> CellMap;
+  for (arma::uword idx = 0; idx < batch_ids.n_elem; idx++){
+    int cell_id = batch_ids(idx);
+    int col_id = cell_id - 1;
+    if (col_id < 0 || col_id >= counts.n_cols){
+      continue;
+    }
+    arma::uvec geneidx = arma::find(counts.col(col_id));
+    arma::mat mtx(geneidx.n_elem,3);
+
+    mtx.col(0) = arma::nonzeros(counts.col(col_id));
+    mtx.col(1).fill(celltypes(col_id));
+    mtx.col(2) = genes(geneidx);
+
+    CellMap[cell_id] = Cell(cell_id,mtx,alpha,beta,K,
+                        zero_gamma,
+                        rand_gamma);
+  }
+
+  return CellMap;
+}
+
 std::unordered_map<int,Cell> build_Predict_Cell_Map(arma::sp_mat& counts,
                                                     arma::vec& celltypes,
                                                     arma::vec& genes,
