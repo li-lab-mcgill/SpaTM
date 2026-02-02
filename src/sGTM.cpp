@@ -131,19 +131,29 @@ void train_sgtm(arma::sp_mat& counts,
       double scale = static_cast<double>(D) / static_cast<double>(batch_ids.n_elem);
       n_wk = (1.0 - lr) * n_wk + lr * (scale * batch_nwk);
       CellMap.clear();
+
+      if (verbal){
+        double batch_prog = (static_cast<double>(iter) +
+          (static_cast<double>(b + 1) / static_cast<double>(num_batches))) /
+          static_cast<double>(maxiter);
+        Rcout.flush();
+        prog = batch_prog;
+        Rcout << "[";
+        pos = int(prog_width * prog);
+        for(int p = 0; p < prog_width; p++){
+          if (p < pos){ Rcout << "=" ;}
+          else { Rcout << " " ;}
+        }
+        double diff = arma::max(arma::max(arma::abs(n_wk - old_nwk)));
+        Rcout << "] " << int(prog * 100.0) << "% || Iter: " << iter
+              << " || Batches: " << (b + 1) << "/" << num_batches
+              << " || Delta: " << diff <<" \r";
+      }
     }
 
     double diff = arma::max(arma::max(arma::abs(n_wk - old_nwk)));
     if (verbal){
-      Rcout.flush();
-      prog += 1.0/maxiter;
-      Rcout << "[";
-      pos = int(prog_width * prog);
-      for(int p = 0; p < prog_width; p++){
-        if (p < pos){ Rcout << "=" ;}
-        else { Rcout << " " ;}
-      }
-      Rcout << "] " << int(prog * 100.0) << "% || Iter: " << iter << " || Delta: " << diff <<" \r";
+      prog = (static_cast<double>(iter + 1)) / static_cast<double>(maxiter);
     }
 
     if (diff < thresh){
@@ -153,7 +163,9 @@ void train_sgtm(arma::sp_mat& counts,
         for(int p = 0; p < prog_width; p++){
           Rcout << "=" ;
         }
-        Rcout << "] " << "100% || Iter: " << iter << " || Delta: " << diff << std::endl;
+          Rcout << "] " << "100% || Iter: " << iter
+            << " || Batches: " << num_batches << "/" << num_batches
+            << " || Delta: " << diff << std::endl;
         Rcout << "Model Converged at iteration : " << iter << std::endl;
       }
       return;
@@ -168,7 +180,9 @@ void train_sgtm(arma::sp_mat& counts,
     for(int p = 0; p < prog_width; p++){
       Rcout << "=" ;
     }
-    Rcout << "] " << "100% || Iter: " << maxiter << " || Delta: " << arma::max(arma::max(arma::abs(n_wk - old_nwk))) << std::endl;
+        Rcout << "] " << "100% || Iter: " << maxiter
+          << " || Batches: " << num_batches << "/" << num_batches
+          << " || Delta: " << arma::max(arma::max(arma::abs(n_wk - old_nwk))) << std::endl;
     Rcout << "Max Iteration Reached" << std::endl;
   }
   return;
