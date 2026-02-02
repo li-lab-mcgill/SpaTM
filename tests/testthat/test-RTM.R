@@ -1,7 +1,9 @@
-library(testthat)
-library(SpatialExperiment)
-library(SpaTM)
-library(bluster)
+suppressPackageStartupMessages({
+  library(testthat)
+  library(SpatialExperiment)
+  library(SpaTM)
+  library(bluster)
+})
 #TODO need tests for the helper functions
 
 # Helper function to create a mock SpatialTopicExperiment object

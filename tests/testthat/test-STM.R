@@ -1,9 +1,11 @@
-library(testthat)
-library(SpaTM)
-library(SpatialExperiment)
-library(Matrix)
-library(torch)
-library(dplyr)
+suppressPackageStartupMessages({
+  library(testthat)
+  library(SpaTM)
+  library(SpatialExperiment)
+  library(Matrix)
+  library(torch)
+  library(dplyr)
+})
 
 #TODO need to make sure pred_mlp works on GLM and NN
 #TODO need to work on how the MLP is save if desired

@@ -1,7 +1,9 @@
-library(testthat)
-library(SingleCellExperiment)
-library(Matrix)
-library(SpaTM)
+suppressPackageStartupMessages({
+  library(testthat)
+  library(SingleCellExperiment)
+  library(Matrix)
+  library(SpaTM)
+})
 
 
 ##Logical Function to check that outputs are 'nearly' identical

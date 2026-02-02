@@ -1,7 +1,9 @@
-library(testthat)
-library(SingleCellExperiment)
-library(Matrix)
-library(SpaTM)
+suppressPackageStartupMessages({
+  library(testthat)
+  library(SingleCellExperiment)
+  library(Matrix)
+  library(SpaTM)
+})
 
 ## Logical helper to check approximate equality
 near_match <- function(target, test, tol = 1e-8) {

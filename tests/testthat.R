@@ -6,7 +6,9 @@
 # * https://r-pkgs.org/testing-design.html#sec-tests-files-overview
 # * https://testthat.r-lib.org/articles/special-files.html
 
-library(testthat)
-library(SpaTM)
+suppressPackageStartupMessages({
+	library(testthat)
+	library(SpaTM)
+})
 
 test_check("SpaTM")
