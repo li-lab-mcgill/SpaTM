@@ -1,6 +1,7 @@
 #include "CellMap.h"
 #include "GTM.h"
 #include <omp.h>
+#include <vector>
 
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -307,86 +308,110 @@ void train_gtm(arma::sp_mat& counts,
 
 
 /// PREDICTION
-void predict_epoch(std::unordered_map<int,Cell>& CellMap,const double& alpha,
-                   int K,int D,int M,arma::mat& n_dk,
+struct PredictCell {
+  arma::vec counts;
+  arma::uvec genes;
+  arma::mat gamma;
+
+  PredictCell() {}
+  PredictCell(const arma::vec& counts_in, const arma::uvec& genes_in, int K)
+    : counts(counts_in), genes(genes_in), gamma(counts_in.n_elem, K) {
+      if (counts_in.n_elem > 0){
+        gamma.fill(1.0 / K);
+      }
+    }
+};
+
+static void init_predict_cells(const arma::sp_mat& counts,
+                               const arma::vec& genes,
+                               int K, int D,
+                               std::vector<PredictCell>& cells,
+                               arma::mat& n_dk){
+  cells.clear();
+  cells.reserve(D);
+  n_dk.set_size(D, K);
+  n_dk.zeros();
+  for (int i = 0; i < D; i++){
+    arma::uvec geneidx = arma::find(counts.col(i));
+    arma::vec token_counts = arma::nonzeros(counts.col(i));
+    arma::uvec gene_ids = arma::conv_to<arma::uvec>::from(genes(geneidx));
+    if (gene_ids.n_elem > 0){
+      gene_ids -= 1;
+    }
+    cells.emplace_back(token_counts, gene_ids, K);
+    if (token_counts.n_elem > 0){
+      double total = arma::accu(token_counts);
+      n_dk.row(i).fill(total / K);
+    }
+  }
+}
+
+static void predict_epoch(std::vector<PredictCell>& cells,const double& alpha,
+                   int K,int D,arma::mat& n_dk,
                    const arma::mat& phi, int num_threads = 1,
                    int burnin = 1){
   omp_set_num_threads(num_threads);
-  int gene,counts,ndk_id;
-  arma::rowvec gamma_k = arma::zeros<arma::rowvec>(K);
-  arma::rowvec cur_counts = arma::zeros<arma::rowvec>(K);
   #pragma omp parallel for
-  for (int i = 1; i <= D; i++){
+  for (int i = 0; i < D; i++){
+    PredictCell& cell = cells[i];
+    int tokens = cell.counts.n_elem;
+    if (tokens == 0){
+      n_dk.row(i).zeros();
+      continue;
+    }
 
-    arma::mat cur_gamma = CellMap[i].cell_gamma; //TODO
-    arma::mat m = CellMap[i].cell_mtx; //TODO
-    ndk_id = i-1; //To accomodate row indices for matrix
-    int tokens = m.n_rows;
+    arma::rowvec gamma_k(K, arma::fill::zeros);
+    arma::rowvec cur_counts(K, arma::fill::zeros);
     double diff = 1;
     int max_update = burnin;
     int u = 0;
-    arma::rowvec cur_ndk = n_dk.row(ndk_id);
-    //Gamma burn-in
+    arma::rowvec cur_ndk = n_dk.row(i);
     while (diff > 0.01 && u < max_update){
       u++;
 
       for (int token = 0; token < tokens; token++){
-        //Rcout << "1" << std::endl;
-        counts = m(token,0);
-        gene = m(token,2)-1;
-        cur_counts = cur_gamma.row(token)*counts; //TODO
-        // Rcout << "2" << std::endl;
-        gamma_k = (alpha + n_dk.row(ndk_id) - cur_counts) % phi.row(gene);
+        int gene = cell.genes(token);
+        double counts = cell.counts(token);
+        cur_counts = cell.gamma.row(token)*counts;
+        gamma_k = (alpha + n_dk.row(i) - cur_counts) % phi.row(gene);
 
-        //sequential par
         if (arma::any(gamma_k < 0)){
-          gamma_k = (alpha + n_dk.row(ndk_id)) % phi.row(gene);
+          gamma_k = (alpha + n_dk.row(i)) % phi.row(gene);
         }
         gamma_k = gamma_k/sum(gamma_k);
-        //Rcout << "3" << std::endl;
-        cur_gamma.row(token) = gamma_k; //TODO
-
-        //update params
-        //Rcout << "4" << std::endl;
+        cell.gamma.row(token) = gamma_k;
       }
-      n_dk.row(ndk_id).zeros();
-      for (int token = 0; token < tokens; token++){ //TODO vectorise
-        n_dk.row(ndk_id) += cur_gamma.row(token)*m(token,0);
+      n_dk.row(i).zeros();
+      for (int token = 0; token < tokens; token++){
+        n_dk.row(i) += cell.gamma.row(token)*cell.counts(token);
       }
-      diff = abs(arma::accu(cur_ndk - n_dk.row(ndk_id)));
-      cur_ndk = n_dk.row(ndk_id);
+      diff = abs(arma::accu(cur_ndk - n_dk.row(i)));
+      cur_ndk = n_dk.row(i);
     }
-    CellMap[i].cell_gamma = cur_gamma; //TODO
-
-
   }
 }
 
 
 // [[Rcpp::export]]
-void infer_topics_cpp(arma::sp_mat& counts,
-                       arma::vec& celltypes,
-                       arma::vec& genes,
+void infer_topics_cpp(const arma::sp_mat& counts,
+                       const arma::vec& celltypes,
+                       const arma::vec& genes,
                        double& alpha,
                        int K,int D,int M,arma::mat& n_dk, const arma::mat& phi,
                        int num_threads = 1,int maxiter = 100,
                        bool verbal = true,int burnin = 1){
-  std::unordered_map<int,Cell> CellMap = build_Predict_Cell_Map(counts,
-                                                                celltypes,
-                                                                genes,
-                                                                D,K);
-
-  build_ndk(n_dk,CellMap,D,K);
+  static_cast<void>(celltypes);
+  static_cast<void>(M);
+  std::vector<PredictCell> cells;
+  init_predict_cells(counts, genes, K, D, cells, n_dk);
 
   double prog = 0;
   int prog_width = 50;
   int pos = 0;
 
   for (int i = 0; i < maxiter; i++){
-    predict_epoch(CellMap,alpha,K,D,M,n_dk,phi,num_threads,burnin);
-    build_ndk(n_dk,CellMap,D,K);
+    predict_epoch(cells,alpha,K,D,n_dk,phi,num_threads,burnin);
     if (verbal){
-
       Rcout.flush();
 
       prog += 1.0/maxiter;
@@ -408,31 +433,28 @@ void infer_topics_cpp(arma::sp_mat& counts,
     Rcout << "] " << "100% || Iter: " << maxiter << std::endl;
     Rcout << "Max Iteration Reached" << std::endl;
   }
-  CellMap.clear();
   return;
 }
 
 
 // [[Rcpp::export]]
-List infer_gex_cpp(arma::sp_mat& counts,
-  arma::vec& celltypes,
-  arma::vec& genes,
+List infer_gex_cpp(const arma::sp_mat& counts,
+  const arma::vec& celltypes,
+  const arma::vec& genes,
   double& alpha,
   int K, int D, int M, arma::mat& n_dk, const arma::mat& phi,
   int num_threads = 1, int maxiter = 100,
   bool verbal = true, int burnin = 1 ) {
-std::unordered_map<int, Cell> CellMap = build_Predict_Cell_Map(counts,
-                                                celltypes,
-                                                genes,
-                                                D, K);
-build_ndk(n_dk, CellMap, D, K);
+static_cast<void>(M);
+std::vector<PredictCell> cells;
+init_predict_cells(counts, genes, K, D, cells, n_dk);
 
 double prog = 0;
 int prog_width = 50;
 int pos = 0;
 
 for (int i = 0; i < maxiter; i++) {
-predict_epoch(CellMap, alpha, K, D, M, n_dk, phi, num_threads,burnin);
+predict_epoch(cells, alpha, K, D, n_dk, phi, num_threads,burnin);
 if (verbal) {
 Rcout.flush();
 prog += 1.0 / maxiter;
@@ -458,15 +480,22 @@ Rcout << "] " << "100% || Iter: " << maxiter << std::endl;
 Rcout << "Max Iteration Reached" << std::endl;
 }
 
-// Collect gamma and mtx matrices from CellMap
+// Collect gamma and mtx matrices from predicted cells
 List result(D);
-for (int i = 1; i <= D; i++) {
-List cell_data = List::create(
-Named("cell_gamma") = CellMap[i].cell_gamma,
-Named("cell_mtx") = CellMap[i].cell_mtx
-);
-result[i - 1] = cell_data;
+for (int i = 0; i < D; i++) {
+PredictCell& cell = cells[i];
+arma::mat mtx(cell.counts.n_elem,3);
+mtx.col(0) = cell.counts;
+mtx.col(1).fill(celltypes(i));
+if (cell.genes.n_elem > 0){
+  arma::vec gene_vals = arma::conv_to<arma::vec>::from(cell.genes) + 1;
+  mtx.col(2) = gene_vals;
 }
-CellMap.clear();
+List cell_data = List::create(
+Named("cell_gamma") = cell.gamma,
+Named("cell_mtx") = mtx
+);
+result[i] = cell_data;
+}
 return result;
 }

@@ -92,13 +92,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // infer_topics_cpp
-void infer_topics_cpp(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, double& alpha, int K, int D, int M, arma::mat& n_dk, const arma::mat& phi, int num_threads, int maxiter, bool verbal, int burnin);
+void infer_topics_cpp(const arma::sp_mat& counts, const arma::vec& celltypes, const arma::vec& genes, double& alpha, int K, int D, int M, arma::mat& n_dk, const arma::mat& phi, int num_threads, int maxiter, bool verbal, int burnin);
 RcppExport SEXP _SpaTM_infer_topics_cpp(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP MSEXP, SEXP n_dkSEXP, SEXP phiSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::sp_mat& >::type counts(countsSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type celltypes(celltypesSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type genes(genesSEXP);
+    Rcpp::traits::input_parameter< const arma::sp_mat& >::type counts(countsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type celltypes(celltypesSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type genes(genesSEXP);
     Rcpp::traits::input_parameter< double& >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< int >::type K(KSEXP);
     Rcpp::traits::input_parameter< int >::type D(DSEXP);
@@ -114,14 +114,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // infer_gex_cpp
-List infer_gex_cpp(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, double& alpha, int K, int D, int M, arma::mat& n_dk, const arma::mat& phi, int num_threads, int maxiter, bool verbal, int burnin);
+List infer_gex_cpp(const arma::sp_mat& counts, const arma::vec& celltypes, const arma::vec& genes, double& alpha, int K, int D, int M, arma::mat& n_dk, const arma::mat& phi, int num_threads, int maxiter, bool verbal, int burnin);
 RcppExport SEXP _SpaTM_infer_gex_cpp(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP MSEXP, SEXP n_dkSEXP, SEXP phiSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::sp_mat& >::type counts(countsSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type celltypes(celltypesSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type genes(genesSEXP);
+    Rcpp::traits::input_parameter< const arma::sp_mat& >::type counts(countsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type celltypes(celltypesSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type genes(genesSEXP);
     Rcpp::traits::input_parameter< double& >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< int >::type K(KSEXP);
     Rcpp::traits::input_parameter< int >::type D(DSEXP);
