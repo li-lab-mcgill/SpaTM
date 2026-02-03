@@ -119,6 +119,8 @@ std::unordered_map<int,Cell> build_Cell_Map_batch(arma::sp_mat& counts,
   omp_set_num_threads(num_threads);
 
   std::unordered_map<int,Cell> CellMap;
+
+  #pragma omp parallel for
   for (arma::uword idx = 0; idx < batch_ids.n_elem; idx++){
     int cell_id = batch_ids(idx);
     int col_id = cell_id - 1;
