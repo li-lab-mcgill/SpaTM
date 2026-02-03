@@ -1,6 +1,7 @@
 #include "CellMap.h"
 
 #include <RcppArmadillo.h>
+#include <vector>
 
 
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -88,9 +89,10 @@ std::unordered_map<int,Cell> build_Cell_Map(arma::sp_mat& counts,
   omp_set_num_threads(num_threads);
 
   std::unordered_map<int,Cell> CellMap;
-  //int cell_start,cell_end;
+  std::vector<std::unordered_map<int,Cell>> thread_maps(num_threads);
   #pragma omp parallel for
   for (int i = 0; i < D; i++){
+    int tid = omp_get_thread_num();
     arma::uvec geneidx = arma::find(counts.col(i));
     arma::mat mtx(geneidx.n_elem,3);
 
@@ -98,9 +100,17 @@ std::unordered_map<int,Cell> build_Cell_Map(arma::sp_mat& counts,
     mtx.col(1).fill(celltypes(i));
     mtx.col(2) = genes(geneidx);
 
-    CellMap[i+1] = Cell(i+1,mtx,alpha,beta,K,
-                        zero_gamma,
-                        rand_gamma);
+    int cell_id = i + 1;
+    thread_maps[tid].emplace(cell_id, Cell(cell_id,mtx,alpha,beta,K,
+                                           zero_gamma,
+                                           rand_gamma));
+  }
+
+  CellMap.reserve(D);
+  for (int t = 0; t < num_threads; t++){
+    for (auto& kv : thread_maps[t]){
+      CellMap.emplace(kv.first, std::move(kv.second));
+    }
   }
 
   return CellMap;
@@ -119,9 +129,10 @@ std::unordered_map<int,Cell> build_Cell_Map_batch(arma::sp_mat& counts,
   omp_set_num_threads(num_threads);
 
   std::unordered_map<int,Cell> CellMap;
-
+  std::vector<std::unordered_map<int,Cell>> thread_maps(num_threads);
   #pragma omp parallel for
   for (arma::uword idx = 0; idx < batch_ids.n_elem; idx++){
+    int tid = omp_get_thread_num();
     int cell_id = batch_ids(idx);
     int col_id = cell_id - 1;
     if (col_id < 0 || col_id >= counts.n_cols){
@@ -134,9 +145,16 @@ std::unordered_map<int,Cell> build_Cell_Map_batch(arma::sp_mat& counts,
     mtx.col(1).fill(celltypes(col_id));
     mtx.col(2) = genes(geneidx);
 
-    CellMap[cell_id] = Cell(cell_id,mtx,alpha,beta,K,
-                        zero_gamma,
-                        rand_gamma);
+    thread_maps[tid].emplace(cell_id, Cell(cell_id,mtx,alpha,beta,K,
+                                           zero_gamma,
+                                           rand_gamma));
+  }
+
+  CellMap.reserve(batch_ids.n_elem);
+  for (int t = 0; t < num_threads; t++){
+    for (auto& kv : thread_maps[t]){
+      CellMap.emplace(kv.first, std::move(kv.second));
+    }
   }
 
   return CellMap;

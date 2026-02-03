@@ -10,6 +10,17 @@ near_match <- function(target, test, tol = 1e-8) {
   all(abs(target - test) < tol)
 }
 
+check_multithread_available <- function() {
+  if (!requireNamespace("parallel", quietly = TRUE)) {
+    install.packages("parallel")
+  }
+  cores <- parallel::detectCores(logical = FALSE)
+  if (is.na(cores) || cores < 2) {
+    warning("Only 1 CPU core detected. Multi-threaded tests need at least 2 cores; consider running on a multi-core machine.")
+  }
+  invisible(cores)
+}
+
 set.seed(42)
 
 test_sce_sgtm <- SingleCellExperiment(
@@ -44,4 +55,15 @@ test_that("sGTM handles full-batch setting", {
   row_sums_ndk <- rowSums(ndk(scte_trained))
   colsums_counts <- Matrix::colSums(counts(scte_trained))
   expect_true(near_match(row_sums_ndk,colsums_counts), info = "Full batch ndk sums should match counts")
+})
+
+test_that("sGTM runs with num_threads = 2", {
+  check_multithread_available()
+  scte <- SingleCellTopicExperiment(test_sce_sgtm, K = 3)
+
+  expect_silent(
+    sGTM(scte, K = 3, D = ncol(scte), batch_size = 10,
+         num_threads = 2, maxiter = 2, verbal = FALSE,
+         lr = 0.5, shuffle = FALSE)
+  )
 })

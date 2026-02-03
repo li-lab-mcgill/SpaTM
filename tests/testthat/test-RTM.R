@@ -33,6 +33,17 @@ create_test_spatial_topic_experiment <- function() {
   SpatialTopicExperiment(spe,K = 10)
 }
 
+check_multithread_available <- function() {
+  if (!requireNamespace("parallel", quietly = TRUE)) {
+    install.packages("parallel")
+  }
+  cores <- parallel::detectCores(logical = FALSE)
+  if (is.na(cores) || cores < 2) {
+    warning("Only 1 CPU core detected. Multi-threaded tests need at least 2 cores; consider running on a multi-core machine.")
+  }
+  invisible(cores)
+}
+
 test_that("RTM function returns expected results for valid input", {
   ste <- create_test_spatial_topic_experiment()
   nbr_list <- get_nbrs(ste, samples = "sample_id", cell_ids = "int_cell", dist = 5)
@@ -84,6 +95,16 @@ test_that("RTM throws error for invalid input", {
     matrix(0,nrow = 5,ncol= 2)
   })
   expect_error(RTM(invalid_input, K = 5, nbr_list = nbr_list, num_threads = 1, maxiter = 5, verbal = FALSE))
+})
+
+test_that("RTM runs with num_threads = 2", {
+  check_multithread_available()
+  ste <- create_test_spatial_topic_experiment()
+  nbr_list <- get_nbrs(ste, samples = "sample_id", cell_ids = "int_cell", dist = 5)
+  K <- ncol(alphaPrior(ste))
+  expect_silent(
+    RTM(ste, K = K, nbr_list = nbr_list, num_threads = 2, maxiter = 2, verbal = FALSE)
+  )
 })
 
 #### new tests

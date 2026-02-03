@@ -12,6 +12,17 @@ near_match <- function(target, test, tol = 1e-8) {
   all(abs(target - test) < tol)
 }
 
+check_multithread_available <- function() {
+  if (!requireNamespace("parallel", quietly = TRUE)) {
+    install.packages("parallel")
+  }
+  cores <- parallel::detectCores(logical = FALSE)
+  if (is.na(cores) || cores < 2) {
+    warning("Only 1 CPU core detected. Multi-threaded tests need at least 2 cores; consider running on a multi-core machine.")
+  }
+  invisible(cores)
+}
+
 test_sce <- SingleCellExperiment(
   assays = list(counts = matrix(rpois(100 * 50, lambda = 80), nrow = 100, ncol = 50))
 )
@@ -42,6 +53,14 @@ test_that("ndk and nwk are updated correctly after training", {
   expect_true(near_match(1,rowSums(theta(scte_trained))), info = "All row sums of theta should be equal to 1")
   expect_true(near_match(1,colSums(phi(scte_trained))), info = "All col sums of phi should be equal to 1")
 
+})
+
+test_that("GTM runs with num_threads = 2", {
+  check_multithread_available()
+  scte <- SingleCellTopicExperiment(test_sce, K = 4)
+  expect_silent(
+    GTM(scte, K = 4, D = ncol(scte), num_threads = 2, maxiter = 2, verbal = FALSE)
+  )
 })
 
 # Test 2: Check that phi and theta have colSums and rowSums equal to 1
