@@ -30,7 +30,7 @@ static void run_epoch_batch(std::unordered_map<int,Cell>& CellMap,const arma::ma
                int burnin = 1){
   omp_set_num_threads(num_threads);
 
-
+  const double eps = 1e-12;
   arma::rowvec beta_sum = arma::sum(beta,0);
   arma::rowvec nwk_sum = arma::sum(n_wk,0);
   #pragma omp parallel for
@@ -50,15 +50,22 @@ static void run_epoch_batch(std::unordered_map<int,Cell>& CellMap,const arma::ma
         int counts = m(token,0);
         int gene = m(token,2)-1;
         arma::rowvec cur_counts = cur_gamma.row(token)*counts;
+        arma::rowvec denom = beta_sum + nwk_sum - cur_counts;
+        denom = arma::clamp(denom, eps, arma::datum::inf);
         arma::rowvec gamma_k = (alpha.row(ndk_id) + n_dk.row(ndk_id) - cur_counts) %
           (beta.row(gene)+n_wk.row(gene)- cur_counts) /
-            (beta_sum+nwk_sum- cur_counts);
-        gamma_k = gamma_k/sum(gamma_k);
-        if (arma::any(gamma_k < 0)){
+            denom;
+        double gamma_sum = arma::accu(gamma_k);
+        if (!gamma_k.is_finite() || gamma_sum <= eps || arma::any(gamma_k < 0)){
           gamma_k = (alpha.row(ndk_id) + n_dk.row(ndk_id)) % (beta.row(gene)+
             n_wk.row(gene)) /
               (beta_sum+nwk_sum);
+          gamma_sum = arma::accu(gamma_k);
+          if (!gamma_k.is_finite() || gamma_sum <= eps){
+            gamma_k.fill(1.0 / static_cast<double>(K));
+          }
         }
+        gamma_k = gamma_k/arma::accu(gamma_k);
         cur_gamma.row(token) = gamma_k;
       }
 
@@ -102,6 +109,9 @@ void train_sgtm(arma::sp_mat& counts,
   int prog_width = 50;
   int pos = 0;
   arma::mat old_nwk = n_wk;
+  const double tau0 = 1.0;
+  const double kappa = 0.7;
+  double step = 0.0;
 
   for (int iter = 0; iter < maxiter; iter++){
     arma::uvec order = shuffle ? (arma::randperm(D) + 1) : arma::regspace<arma::uvec>(1,D);
@@ -129,7 +139,10 @@ void train_sgtm(arma::sp_mat& counts,
       build_nwk_batch(batch_nwk,CellMap,batch_ids);
 
       double scale = static_cast<double>(D) / static_cast<double>(batch_ids.n_elem);
-      n_wk = (1.0 - lr) * n_wk + lr * (scale * batch_nwk);
+      double lr_t = lr * std::pow(tau0 + step, -kappa);
+      lr_t = std::min(1.0, std::max(lr_t, 1e-6));
+      n_wk = (1.0 - lr_t) * n_wk + lr_t * (scale * batch_nwk);
+      step += 1.0;
       CellMap.clear();
 
       if (verbal){
