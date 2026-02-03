@@ -7,6 +7,7 @@ Author: Adrien Osakwe
 Maintainer: Adrien Osakwe <adrien.osakwe@mail.mcgill.ca>
 Description: Topic Modelling framework for Spatial, Bulk, and Single cell analyses.
 License: MIT + file LICENSE
+biocViews:
 Imports: Rcpp (>= 1.0.10),
          SingleCellExperiment,
          S4Vectors,

@@ -157,7 +157,10 @@ void train_sgtm(arma::sp_mat& counts,
           if (p < pos){ Rcout << "=" ;}
           else { Rcout << " " ;}
         }
-        double diff = arma::max(arma::max(arma::abs(n_wk - old_nwk)));
+        //double diff = arma::max(arma::max(arma::abs(n_wk - old_nwk)));
+        //Switched to scaled current batch to better assess convergence
+        double diff = arma::max(arma::max(arma::abs(n_wk - (scale * batch_nwk))));
+
         Rcout << "] " << int(prog * 100.0) << "% || Iter: " << iter
               << " || Batches: " << (b + 1) << "/" << num_batches
               << " || Delta: " << diff <<" \r";
