@@ -71,6 +71,8 @@ sGTM <- function(scte,K,D,batch_size = 1024,num_threads = 1,maxiter = 100,verbal
                   rand_gamma = TRUE,
                   thresh = 1e-8,burnin = 1,
                   lr = 0.1,
+                  tau0 = 1.0,
+                  kappa = 0.7,
                   shuffle = TRUE){
   train_sgtm(counts(scte),
               celltypes = scte$int_cell,
@@ -90,6 +92,8 @@ sGTM <- function(scte,K,D,batch_size = 1024,num_threads = 1,maxiter = 100,verbal
               thresh,
               burnin,
               lr,
+              tau0,
+              kappa,
               shuffle)
   return(scte)
 }

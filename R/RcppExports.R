@@ -87,7 +87,7 @@ test_mlp_forward <- function(X, layers, weights, dummy_topic = FALSE) {
     .Call(`_SpaTM_test_mlp_forward`, X, layers, weights, dummy_topic)
 }
 
-train_sgtm <- function(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, batch_size = 1024L, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0.00001, burnin = 1L, lr = 0.1, shuffle = TRUE) {
-    invisible(.Call(`_SpaTM_train_sgtm`, counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, batch_size, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, burnin, lr, shuffle))
+train_sgtm <- function(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, batch_size = 1024L, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0.00001, burnin = 1L, lr = 0.1, tau0 = 1.0, kappa = 0.7, shuffle = TRUE) {
+    invisible(.Call(`_SpaTM_train_sgtm`, counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, batch_size, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, burnin, lr, tau0, kappa, shuffle))
 }
 

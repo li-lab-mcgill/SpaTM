@@ -95,6 +95,8 @@ void train_sgtm(arma::sp_mat& counts,
                      double thresh = 0.00001,
                      int burnin = 1,
                      double lr = 0.1,
+                     const double tau0 = 1.0,
+                     const double kappa = 0.7,
                      bool shuffle = true){
   if (batch_size <= 0){
     batch_size = D;
@@ -109,8 +111,7 @@ void train_sgtm(arma::sp_mat& counts,
   int prog_width = 50;
   int pos = 0;
   arma::mat old_nwk = n_wk;
-  const double tau0 = 1.0;
-  const double kappa = 0.7;
+
   double step = 0.0;
 
   for (int iter = 0; iter < maxiter; iter++){

@@ -337,8 +337,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // train_sgtm
-void train_sgtm(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, const arma::mat& alpha, const arma::mat& beta, int K, int D, arma::mat& n_dk, arma::mat& n_wk, int batch_size, int num_threads, int maxiter, bool verbal, bool zero_gamma, bool rand_gamma, double thresh, int burnin, double lr, bool shuffle);
-RcppExport SEXP _SpaTM_train_sgtm(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP batch_sizeSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP threshSEXP, SEXP burninSEXP, SEXP lrSEXP, SEXP shuffleSEXP) {
+void train_sgtm(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, const arma::mat& alpha, const arma::mat& beta, int K, int D, arma::mat& n_dk, arma::mat& n_wk, int batch_size, int num_threads, int maxiter, bool verbal, bool zero_gamma, bool rand_gamma, double thresh, int burnin, double lr, const double tau0, const double kappa, bool shuffle);
+RcppExport SEXP _SpaTM_train_sgtm(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP batch_sizeSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP threshSEXP, SEXP burninSEXP, SEXP lrSEXP, SEXP tau0SEXP, SEXP kappaSEXP, SEXP shuffleSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::sp_mat& >::type counts(countsSEXP);
@@ -359,8 +359,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< double >::type lr(lrSEXP);
+    Rcpp::traits::input_parameter< const double >::type tau0(tau0SEXP);
+    Rcpp::traits::input_parameter< const double >::type kappa(kappaSEXP);
     Rcpp::traits::input_parameter< bool >::type shuffle(shuffleSEXP);
-    train_sgtm(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, batch_size, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, burnin, lr, shuffle);
+    train_sgtm(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, batch_size, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, burnin, lr, tau0, kappa, shuffle);
     return R_NilValue;
 END_RCPP
 }
@@ -384,7 +386,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SpaTM_progress_bar", (DL_FUNC) &_SpaTM_progress_bar, 5},
     {"_SpaTM_stm_torch_estep", (DL_FUNC) &_SpaTM_stm_torch_estep, 20},
     {"_SpaTM_test_mlp_forward", (DL_FUNC) &_SpaTM_test_mlp_forward, 4},
-    {"_SpaTM_train_sgtm", (DL_FUNC) &_SpaTM_train_sgtm, 19},
+    {"_SpaTM_train_sgtm", (DL_FUNC) &_SpaTM_train_sgtm, 21},
     {NULL, NULL, 0}
 };
 
