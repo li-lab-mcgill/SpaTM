@@ -235,8 +235,8 @@ void train_gtm(arma::sp_mat& counts,
   }
 
   //Initialize Sufficient Statistics
-  build_nwk(n_wk,CellMap,D,K);
-  build_ndk(n_dk,CellMap,D,K);
+  //build_nwk(n_wk,CellMap,D,K);
+  //build_ndk(n_dk,CellMap,D,K);
 
 
   arma::mat elbo_val = arma::zeros<arma::mat>(maxiter,4);
