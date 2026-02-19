@@ -490,7 +490,8 @@ STM <- function(spe,
                       dummy_topic = FALSE,
                       burnin_lda = 5,
                       burnin = 100,
-                      final_run_iter = 100){
+                      final_run_iter = 100,
+                      nk_init = TRUE){
   if (!is(spe,'TopicExperiment')){
     stop('This function requires a TopicExperiment object to run correctly. Please create a Spatial or SingleCell variant before using the RTM function.')
   }
@@ -535,7 +536,8 @@ STM <- function(spe,
                                                 zero_gamma,
                                                 rand_gamma,
                                                 thresh,
-                                                lr)
+                                                lr,
+                                                nk_init)
     return(spe)
   }
   else{

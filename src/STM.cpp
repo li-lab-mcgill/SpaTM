@@ -377,7 +377,8 @@ arma::mat train_stm(arma::sp_mat& counts,
                           bool zero_gamma = false,
                           bool rand_gamma = true,
                           double thresh = 0.00001,
-                          double lr = 0.0001){
+                          double lr = 0.0001,
+                          bool nk_init = true){
   double old_elbo = 0;
   double cur_elbo = 0;
   arma::mat elbo_val = arma::zeros<arma::mat>(maxiter,5);
@@ -401,11 +402,13 @@ arma::mat train_stm(arma::sp_mat& counts,
   Rcout << "STM_CellMap is built" << std::endl;
   }
 
-  //Complete // Consider making the unordered_map its own object
-  build_nwk_stm(n_wk,STM_CellMap,D,K);
-  //double lr = 0.0001;
-  //TComplete // Consider making the unordered_map its own object
-  build_ndk_stm(n_dk,STM_CellMap,D,K);
+  if (nk_init){
+    //Complete // Consider making the unordered_map its own object
+    build_nwk_stm(n_wk,STM_CellMap,D,K);
+    //double lr = 0.0001;
+    //TComplete // Consider making the unordered_map its own object
+    build_ndk_stm(n_dk,STM_CellMap,D,K);
+  }
 
   // Initialize Weights
   arma::vec unique_label = arma::unique(labels);
