@@ -31,8 +31,8 @@ get_phi <- function(n_wk, beta) {
     .Call(`_SpaTM_get_phi`, n_wk, beta)
 }
 
-train_gtm <- function(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0.00001, burnin = 1L) {
-    invisible(.Call(`_SpaTM_train_gtm`, counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, burnin))
+train_gtm <- function(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads = 1L, maxiter = 100L, verbal = TRUE, zero_gamma = FALSE, rand_gamma = TRUE, thresh = 0.00001, burnin = 1L, nk_init = TRUE) {
+    invisible(.Call(`_SpaTM_train_gtm`, counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, burnin, nk_init))
 }
 
 infer_topics_cpp <- function(counts, celltypes, genes, alpha, K, D, M, n_dk, phi, num_threads = 1L, maxiter = 100L, verbal = TRUE, burnin = 1L) {

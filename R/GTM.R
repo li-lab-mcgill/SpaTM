@@ -22,7 +22,7 @@
 GTM <- function(scte,K,D,num_threads = 1,maxiter = 100,verbal = TRUE,
                   zero_gamma = FALSE,
                   rand_gamma = TRUE,
-                  thresh = 1e-8,burnin = 1){
+                  thresh = 1e-8,burnin = 1, nk_init = TRUE){
   train_gtm(counts(scte),
               celltypes = scte$int_cell,
               genes = rowData(scte)$gene_ints,
@@ -38,7 +38,8 @@ GTM <- function(scte,K,D,num_threads = 1,maxiter = 100,verbal = TRUE,
               zero_gamma,
               rand_gamma,
               thresh,
-              burnin)
+              burnin,
+              nk_init)
   return(scte)
 }
 

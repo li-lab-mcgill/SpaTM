@@ -67,8 +67,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // train_gtm
-void train_gtm(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, const arma::mat& alpha, const arma::mat& beta, int K, int D, arma::mat& n_dk, arma::mat& n_wk, int num_threads, int maxiter, bool verbal, bool zero_gamma, bool rand_gamma, double thresh, int burnin);
-RcppExport SEXP _SpaTM_train_gtm(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP threshSEXP, SEXP burninSEXP) {
+void train_gtm(arma::sp_mat& counts, arma::vec& celltypes, arma::vec& genes, const arma::mat& alpha, const arma::mat& beta, int K, int D, arma::mat& n_dk, arma::mat& n_wk, int num_threads, int maxiter, bool verbal, bool zero_gamma, bool rand_gamma, double thresh, int burnin, bool nk_init);
+RcppExport SEXP _SpaTM_train_gtm(SEXP countsSEXP, SEXP celltypesSEXP, SEXP genesSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP KSEXP, SEXP DSEXP, SEXP n_dkSEXP, SEXP n_wkSEXP, SEXP num_threadsSEXP, SEXP maxiterSEXP, SEXP verbalSEXP, SEXP zero_gammaSEXP, SEXP rand_gammaSEXP, SEXP threshSEXP, SEXP burninSEXP, SEXP nk_initSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::sp_mat& >::type counts(countsSEXP);
@@ -87,7 +87,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type rand_gamma(rand_gammaSEXP);
     Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    train_gtm(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, burnin);
+    Rcpp::traits::input_parameter< bool >::type nk_init(nk_initSEXP);
+    train_gtm(counts, celltypes, genes, alpha, beta, K, D, n_dk, n_wk, num_threads, maxiter, verbal, zero_gamma, rand_gamma, thresh, burnin, nk_init);
     return R_NilValue;
 END_RCPP
 }
@@ -342,7 +343,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SpaTM_BuildDiseaseAlpha", (DL_FUNC) &_SpaTM_BuildDiseaseAlpha, 2},
     {"_SpaTM_get_theta", (DL_FUNC) &_SpaTM_get_theta, 2},
     {"_SpaTM_get_phi", (DL_FUNC) &_SpaTM_get_phi, 2},
-    {"_SpaTM_train_gtm", (DL_FUNC) &_SpaTM_train_gtm, 16},
+    {"_SpaTM_train_gtm", (DL_FUNC) &_SpaTM_train_gtm, 17},
     {"_SpaTM_infer_topics_cpp", (DL_FUNC) &_SpaTM_infer_topics_cpp, 13},
     {"_SpaTM_infer_gex_cpp", (DL_FUNC) &_SpaTM_infer_gex_cpp, 13},
     {"_SpaTM_test_RTM_cell", (DL_FUNC) &_SpaTM_test_RTM_cell, 0},

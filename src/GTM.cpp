@@ -211,7 +211,8 @@ void train_gtm(arma::sp_mat& counts,
                      bool zero_gamma = false,
                      bool rand_gamma = true,
                      double thresh = 0.00001,
-                     int burnin = 1){
+                     int burnin = 1,
+                     bool nk_init = true){
   double old_elbo;
   double cur_elbo = 0;
   int M = genes.n_elem;
@@ -235,8 +236,10 @@ void train_gtm(arma::sp_mat& counts,
   }
 
   //Initialize Sufficient Statistics
-  //build_nwk(n_wk,CellMap,D,K);
-  //build_ndk(n_dk,CellMap,D,K);
+  if (nk_init){
+    build_nwk(n_wk,CellMap,D,K);
+    build_ndk(n_dk,CellMap,D,K);
+  }
 
 
   arma::mat elbo_val = arma::zeros<arma::mat>(maxiter,4);
