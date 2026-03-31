@@ -1,4 +1,4 @@
-name: SpaTM Install
+name: Install
 
 on:
   push:
