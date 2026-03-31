@@ -403,6 +403,7 @@ arma::mat train_stm(arma::sp_mat& counts,
   }
 
   if (nk_init){
+//TODO switch to only conditional updates for ndk (nwk may need to always be initialized)
     //Complete // Consider making the unordered_map its own object
     build_nwk_stm(n_wk,STM_CellMap,D,K);
     //double lr = 0.0001;
