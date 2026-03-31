@@ -72,4 +72,4 @@ jobs:
 
       - name: Run unit tests
         run: |
-          Rscript -e 'devtools::test()'
+          Rscript -e 'reporter <- testthat::SummaryReporter$new(); testthat::test_local(reporter = reporter); failed <- if (is.null(reporter$failed)) 0 else reporter$failed; errors <- if (is.null(reporter$error)) 0 else reporter$error; cat("Failed:", failed, "Errors:", errors, "\n"); if ((failed + errors) > 0) quit(status = 1)'
