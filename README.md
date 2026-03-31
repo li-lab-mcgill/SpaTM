@@ -1,4 +1,8 @@
 # A Spatial Topic Model (SpaTM) for Inferring Spatially Informed Transcriptional Programs
+[![Manuscript](https://img.shields.io/badge/DOI-10.1093%2Fbib%2Fbbaf657-blue)](https://doi.org/10.1093/bib/bbaf657)
+[![Install](https://github.com/li-lab-mcgill/SpaTM/actions/workflows/spatm_install.yml/badge.svg)](https://github.com/li-lab-mcgill/SpaTM/actions/workflows/spatm_install.yml)
+[![Tests](https://github.com/li-lab-mcgill/SpaTM/actions/workflows/spatm_test.yml/badge.svg)](https://github.com/li-lab-mcgill/SpaTM/actions/workflows/spatm_test.yml)
+
 
 This repository contains the R package for the Spatial Topic Model we have developed for flexible and interpretable analysis of spatial transcriptomics data. The method integrates multiple topic modelling frameworks to enable:
 
