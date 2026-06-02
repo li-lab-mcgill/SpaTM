@@ -308,10 +308,15 @@ void train_gtm(arma::sp_mat& counts,
 
 
 /// PREDICTION
+///
+/// n_dk inference: trained gene-topic matrix phi is held constant; only
+/// per-cell sufficient statistics n_dk (R slot ndk) are updated
+/// After infer_topics_cpp, compute cell-level theta on the R side (buildTheta).
+// Per-cell token store for prediction (0-based cell/gene indices; training
 struct PredictCell {
-  arma::vec counts;
-  arma::uvec genes;
-  arma::mat gamma;
+  arma::vec counts;  // nonzero counts per token for this cell
+  arma::uvec genes;  // 0-based row indices into phi
+  arma::mat gamma;   // tokens x K topic responsibilities per token
 
   PredictCell() {}
   PredictCell(const arma::vec& counts_in, const arma::uvec& genes_in, int K)
@@ -322,6 +327,7 @@ struct PredictCell {
     }
 };
 
+// One PredictCell per counts column; initial n_dk row is total_counts / K.
 static void init_predict_cells(const arma::sp_mat& counts,
                                const arma::vec& genes,
                                int K, int D,
@@ -346,6 +352,9 @@ static void init_predict_cells(const arma::sp_mat& counts,
   }
 }
 
+// Parallel E-step/M-step per cell: gamma_k propto (alpha + n_dk - cur_counts) % phi_g,
+// with leave-one-out cur_counts; then n_dk.row(i) = sum_t gamma_t * count_t.
+// Inner loop runs up to burnin times until n_dk change < 0.01.
 static void predict_epoch(std::vector<PredictCell>& cells,const double& alpha,
                    int K,int D,arma::mat& n_dk,
                    const arma::mat& phi, int num_threads = 1,
@@ -392,6 +401,10 @@ static void predict_epoch(std::vector<PredictCell>& cells,const double& alpha,
 }
 
 
+// Infer cell-topic counts n_dk in place (ndk on the R object). Repeats
+// predict_epoch maxiter times; no ELBO early stop. celltypes and M are unused
+// (API symmetry with training). Per-token gamma stays in C++ only; use
+// infer_gex_cpp to export gamma and cell_mtx.
 // [[Rcpp::export]]
 void infer_topics_cpp(const arma::sp_mat& counts,
                        const arma::vec& celltypes,
