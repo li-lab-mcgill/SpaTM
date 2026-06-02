@@ -108,9 +108,10 @@ sGTM <- function(scte,K,D,batch_size = 1024,num_threads = 1,maxiter = 100,verbal
 #' @param maxiter Integer, the maximum number of iterations for inference. Default is 50.
 #' @param verbal Logical, whether to print progress messages. Default is TRUE.
 #' @param phi A matrix representing the topic-gene distribution from a trained model.
-#' @param burnin Maximum number of iterations to run during the STM LDA step for each sample (default is 0)
+#' @param burnin Maximum number of iterations to run during the LDA E-step for each sample (default is 1).
 #'
-#' @return A `SingleCellTopicExperiment` or `SpatialTopicExperiment` object with updated inferred topic distributions.
+#' @return A `SingleCellTopicExperiment` or `SpatialTopicExperiment` object with an updated
+#'   `ndk` matrix. Call `buildTheta()` to refresh cell-level topic proportions `theta`.
 #'
 #' @export
 inferTopics <- function(scte,num_threads = 1,maxiter = 50,verbal = TRUE,
@@ -119,7 +120,8 @@ inferTopics <- function(scte,num_threads = 1,maxiter = 50,verbal = TRUE,
   infer_topics_cpp(counts(scte),
                celltypes = scte$int_cell,
                genes = rowData(scte)$gene_ints,
-               alpha = 1,ncol(phi),ncol(scte),nrow(scte),ndk(scte),phi,1,maxiter,verbal,burnin)
+               alpha = 1,ncol(phi),ncol(scte),nrow(scte),ndk(scte),phi,
+               num_threads,maxiter,verbal,burnin)
 
   return(scte)
 }
@@ -146,7 +148,8 @@ inferGEx <- function(scte,num_threads = 1,maxiter = 50,verbal = TRUE,
   gex_res <- infer_gex_cpp(counts(scte),
                    celltypes = scte$int_cell,
                    genes = rowData(scte)$gene_ints,
-                   alpha = 1,ncol(phi),ncol(scte),nrow(scte),ndk(scte),phi,1,maxiter,verbal)
+                   alpha = 1,ncol(phi),ncol(scte),nrow(scte),ndk(scte),phi,
+                   num_threads,maxiter,verbal)
 
   return(gex_res)
 }
