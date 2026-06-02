@@ -6,7 +6,6 @@
 #include <RcppArmadillo.h>
 #include <cstdlib>
 #include <omp.h>
-#include <RcppArmadilloExtensions/sample.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 using namespace std;
@@ -73,17 +72,14 @@ void train_gtm(arma::sp_mat& counts,
 
 
 
-// Prediction
-void predict_epoch(std::unordered_map<int,Cell>& CellMap,const double& alpha,
-                   int K,int D,int M,arma::mat& n_dk,
-                   const arma::mat& phi, int num_threads);
 
-void infer_topics_cpp(arma::sp_mat& counts,
-                       arma::vec& celltypes,
-                       arma::vec& genes,
+// Prediction
+void infer_topics_cpp(const arma::sp_mat& counts,
+                       const arma::vec& celltypes,
+                       const arma::vec& genes,
                        double& alpha,
                        int K,int D,int M,arma::mat& n_dk, const arma::mat& phi,
                        int num_threads,int maxiter,
-                       bool verbal);
+                       bool verbal,int burnin);
 
 #endif

@@ -7,19 +7,21 @@ Author: Adrien Osakwe
 Maintainer: Adrien Osakwe <adrien.osakwe@mail.mcgill.ca>
 Description: Topic Modelling framework for Spatial, Bulk, and Single cell analyses.
 License: MIT + file LICENSE
-Imports: Rcpp (>= 1.0.10),
-         SingleCellExperiment,
-         S4Vectors,
-         SpatialExperiment,
-         scran,
-         dplyr,
-         Matrix,
-         RcppArmadillo,
-         bluster,
-         methods,
-         scuttle,
-         torch,
-         coro
+SystemRequirements: gsfonts (or fonts-urw-base35), libglpk-dev
+Imports: 
+    Rcpp (>= 1.0.10),
+    dplyr,
+    Matrix,
+    RcppArmadillo,
+    methods,
+    torch,
+    coro,
+    SingleCellExperiment,
+    SpatialExperiment,
+    S4Vectors,
+    scran,
+    bluster,
+    scuttle
 Suggests: 
     knitr,
     rmarkdown,
@@ -30,3 +32,4 @@ Encoding: UTF-8
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 URL: https://li-lab-mcgill.github.io/SpaTM/
+biocViews: Software, Transcriptomics

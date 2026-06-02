@@ -1,13 +1,26 @@
-library(testthat)
-library(SingleCellExperiment)
-library(Matrix)
-library(SpaTM)
+suppressPackageStartupMessages({
+  library(testthat)
+  library(SingleCellExperiment)
+  library(Matrix)
+  library(SpaTM)
+})
 
 
 ##Logical Function to check that outputs are 'nearly' identical
 #accomodates float point imprecisions
 near_match <- function(target, test, tol = 1e-8) {
   all(abs(target - test) < tol)
+}
+
+check_multithread_available <- function() {
+  if (!requireNamespace("parallel", quietly = TRUE)) {
+    install.packages("parallel")
+  }
+  cores <- parallel::detectCores(logical = FALSE)
+  if (is.na(cores) || cores < 2) {
+    warning("Only 1 CPU core detected. Multi-threaded tests need at least 2 cores; consider running on a multi-core machine.")
+  }
+  invisible(cores)
 }
 
 test_sce <- SingleCellExperiment(
@@ -42,6 +55,14 @@ test_that("ndk and nwk are updated correctly after training", {
 
 })
 
+test_that("GTM runs with num_threads = 2", {
+  check_multithread_available()
+  scte <- SingleCellTopicExperiment(test_sce, K = 4)
+  expect_silent(
+    GTM(scte, K = 4, D = ncol(scte), num_threads = 2, maxiter = 2, verbal = FALSE)
+  )
+})
+
 # Test 2: Check that phi and theta have colSums and rowSums equal to 1
 test_that("inferTopics should only update ndk and theta matrices with correct sums", {
   scte <- SingleCellTopicExperiment(test_sce, K = 5)
@@ -65,4 +86,6 @@ test_that("inferTopics should only update ndk and theta matrices with correct su
 
 
 })
+
+
 

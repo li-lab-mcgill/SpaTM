@@ -1,6 +1,8 @@
-library(testthat)
-library(SpatialExperiment)
-library(SpaTM)
+suppressPackageStartupMessages({
+  library(testthat)
+  library(SpatialExperiment)
+  library(SpaTM)
+})
 
 # Helper function to create a fixed mock SpatialExperiment object
 mock_spe <- function() {

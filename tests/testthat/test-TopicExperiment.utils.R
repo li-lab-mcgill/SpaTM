@@ -1,6 +1,8 @@
-library(testthat)
-library(SpatialExperiment)
-library(SpaTM)
+suppressPackageStartupMessages({
+  library(testthat)
+  library(SpatialExperiment)
+  library(SpaTM)
+})
 # Mock TopicExperiment objects
 test_spe <- SpatialExperiment(
   assays = list(counts = matrix(rpois(100 * 50, lambda = 10), nrow = 100, ncol = 50))

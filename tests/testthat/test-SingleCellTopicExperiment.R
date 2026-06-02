@@ -1,13 +1,15 @@
-library(testthat)
-library(SingleCellExperiment)
-library(Matrix)
-library(SpaTM)  # Ensure package is loaded
+suppressPackageStartupMessages({
+  library(testthat)
+  library(SingleCellExperiment)
+  library(Matrix)
+  library(SpaTM)  # Ensure package is loaded
+})
 
 # TODO proofread tests to ensure correctness
 
 
 test_that("SingleCellTopicExperiment class is correctly defined", {
-  library(SpaTM)  # Ensure package is loaded
+  suppressPackageStartupMessages(library(SpaTM))  # Ensure package is loaded
 
   expect_true(!is.null(getClassDef("SingleCellTopicExperiment")))
 
